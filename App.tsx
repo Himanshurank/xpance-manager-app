@@ -7,12 +7,14 @@ import { View, ActivityIndicator } from "react-native";
 import { SignupScreen } from "./src/screens/SignupScreen";
 import Toast from "react-native-toast-message";
 import { GroupScreen } from "./src/screens/GroupScreen";
+import { GroupDetailsScreen } from "./src/screens/GroupDetailsScreen";
 
 export type RootStackParamList = {
   Login: undefined;
   Signup: undefined;
   Home: undefined;
   Group: undefined;
+  GroupDetails: undefined;
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -41,6 +43,10 @@ export default function App() {
             <>
               <Stack.Screen name="Home" component={HomeScreen} />
               <Stack.Screen name="Group" component={GroupScreen} />
+              <Stack.Screen
+                name="GroupDetails"
+                component={GroupDetailsScreen}
+              />
             </>
           )}
         </Stack.Navigator>

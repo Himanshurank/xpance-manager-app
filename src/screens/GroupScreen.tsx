@@ -8,12 +8,16 @@ import {
   SafeAreaView,
   Platform,
   ActivityIndicator,
+  Modal,
+  TextInput,
 } from "react-native";
 import Icon from "react-native-vector-icons/MaterialIcons";
 import { useNavigation } from "@react-navigation/native";
 import { supabase } from "../lib/supabase";
 import { useAuth } from "../hooks/useAuth";
 import Toaster from "../utils/toasterConfig";
+import { CreateGroupModal } from "../components/CreateGroupModal";
+import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 
 interface Group {
   id: string;
@@ -21,6 +25,8 @@ interface Group {
   description: string | null;
   created_at: string;
   member_count: number;
+  icon: string;
+  color: string;
 }
 
 interface GroupData {
@@ -33,12 +39,24 @@ interface GroupData {
   };
 }
 
+type RootStackParamList = {
+  GroupDetails: {
+    id: string;
+    name: string;
+    icon: string;
+    color: string;
+    memberCount: number;
+  };
+};
+
 export function GroupScreen() {
-  const navigation = useNavigation();
+  const navigation =
+    useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { user } = useAuth();
   const [groups, setGroups] = useState<Group[]>([]);
   const [loading, setLoading] = useState(true);
   const [recentGroups, setRecentGroups] = useState<Group[]>([]);
+  const [isModalVisible, setModalVisible] = useState(false);
 
   const fetchGroups = async () => {
     if (!user?.id) {
@@ -47,6 +65,7 @@ export function GroupScreen() {
     }
 
     try {
+      setLoading(true);
       // Get groups where user is a member
       const { data: memberGroups, error: memberError } = await supabase
         .from("group_members")
@@ -76,6 +95,8 @@ export function GroupScreen() {
         description: group.description,
         created_at: group.created_at,
         member_count: 0,
+        icon: group.icon,
+        color: group.color,
       }));
 
       // Get member counts
@@ -95,6 +116,7 @@ export function GroupScreen() {
 
       setGroups(sortedGroups);
       setRecentGroups(sortedGroups.slice(0, 3));
+      setLoading(false);
     } catch (error: any) {
       console.error("Error fetching groups:", error);
       Toaster({
@@ -130,7 +152,10 @@ export function GroupScreen() {
           <Icon name="arrow-back" size={24} color="#1a1a1a" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Groups</Text>
-        <TouchableOpacity style={styles.addButton}>
+        <TouchableOpacity
+          style={styles.addButton}
+          onPress={() => setModalVisible(true)}
+        >
           <Icon name="add" size={24} color="#1a73e8" />
         </TouchableOpacity>
       </View>
@@ -146,7 +171,13 @@ export function GroupScreen() {
                   key={group.id}
                   style={styles.groupItem}
                   onPress={() => {
-                    // Handle group selection
+                    navigation.navigate("GroupDetails", {
+                      id: group.id,
+                      name: group.name,
+                      icon: group.icon,
+                      color: group.color,
+                      memberCount: group.member_count,
+                    });
                   }}
                 >
                   <View style={styles.groupIcon}>
@@ -170,24 +201,35 @@ export function GroupScreen() {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>All Groups</Text>
           <View style={styles.groupList}>
-            {groups.length === 0 ? (
+            {groups.length === 0 && !loading && (
               <View style={styles.emptyState}>
                 <Icon name="groups" size={48} color="#ccc" />
                 <Text style={styles.emptyStateText}>No groups yet</Text>
                 <Text style={styles.emptyStateSubText}>
                   Create a group to start managing expenses together
                 </Text>
-                <TouchableOpacity style={styles.createButton}>
+                <TouchableOpacity
+                  style={styles.createButton}
+                  onPress={() => setModalVisible(true)}
+                >
                   <Text style={styles.createButtonText}>Create New Group</Text>
                 </TouchableOpacity>
               </View>
-            ) : (
+            )}
+            {groups.length > 0 &&
+              !loading &&
               groups.map((group) => (
                 <TouchableOpacity
                   key={group.id}
                   style={styles.groupItem}
                   onPress={() => {
-                    // Handle group selection
+                    navigation.navigate("GroupDetails", {
+                      id: group.id,
+                      name: group.name,
+                      icon: group.icon,
+                      color: group.color,
+                      memberCount: group.member_count,
+                    });
                   }}
                 >
                   <View style={styles.groupIcon}>
@@ -207,11 +249,17 @@ export function GroupScreen() {
                   </View>
                   <Icon name="chevron-right" size={24} color="#666" />
                 </TouchableOpacity>
-              ))
-            )}
+              ))}
           </View>
         </View>
       </ScrollView>
+
+      <CreateGroupModal
+        visible={isModalVisible}
+        onClose={() => setModalVisible(false)}
+        onSuccess={fetchGroups}
+        userId={user?.id || ""}
+      />
     </SafeAreaView>
   );
 }

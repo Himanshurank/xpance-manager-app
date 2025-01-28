@@ -20,6 +20,7 @@ import { useAuth } from "../hooks/useAuth";
 import Icon from "react-native-vector-icons/MaterialIcons";
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import { CreateGroupModal } from "../components/CreateGroupModal";
 
 const { StatusBarManager } = NativeModules;
 const { width } = Dimensions.get("window");
@@ -45,6 +46,7 @@ export function HomeScreen() {
   const [newGroupName, setNewGroupName] = useState("");
   const [newGroupDescription, setNewGroupDescription] = useState("");
   const [isSidebarOpen, setSidebarOpen] = useState(false);
+  const [isCreateGroupModal, setIsCreateGroupModal] = useState(false);
   const slideAnim = useRef(new Animated.Value(-width)).current;
   const navigation = useNavigation<NavigationProp>();
 
@@ -290,12 +292,23 @@ export function HomeScreen() {
             <TouchableOpacity
               style={styles.addButton}
               onPress={() => {
-                return;
+                setIsCreateGroupModal(true);
               }}
             >
               <Text style={styles.addButtonText}>+ Create Group</Text>
             </TouchableOpacity>
           </View>
+
+          {isCreateGroupModal && (
+            <CreateGroupModal
+              visible={isCreateGroupModal}
+              onClose={() => setIsCreateGroupModal(false)}
+              onSuccess={() => {
+                setIsCreateGroupModal(false);
+              }}
+              userId={user?.id || ""}
+            />
+          )}
 
           {groups.length === 0 ? (
             <View style={styles.emptyState}>
