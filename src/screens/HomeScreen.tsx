@@ -10,7 +10,6 @@ import {
   StatusBar,
   NativeModules,
   Modal,
-  TextInput,
   Animated,
   Dimensions,
 } from "react-native";
@@ -19,6 +18,8 @@ import { PlatformView } from "../components/PlatformView";
 import { supabase } from "../lib/supabase";
 import { useAuth } from "../hooks/useAuth";
 import Icon from "react-native-vector-icons/MaterialIcons";
+import { useNavigation } from "@react-navigation/native";
+import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 
 const { StatusBarManager } = NativeModules;
 const { width } = Dimensions.get("window");
@@ -30,15 +31,22 @@ interface Group {
   created_at: string;
 }
 
+type RootStackParamList = {
+  Group: undefined;
+  // add other screens here
+};
+
+type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
+
 export function HomeScreen() {
   const { user, signOut } = useAuth();
   const [statusBarHeight, setStatusBarHeight] = React.useState(0);
   const [groups, setGroups] = useState<Group[]>([]);
-  const [modalVisible, setModalVisible] = useState(false);
   const [newGroupName, setNewGroupName] = useState("");
   const [newGroupDescription, setNewGroupDescription] = useState("");
   const [isSidebarOpen, setSidebarOpen] = useState(false);
   const slideAnim = useRef(new Animated.Value(-width)).current;
+  const navigation = useNavigation<NavigationProp>();
 
   React.useEffect(() => {
     if (Platform.OS === "ios") {
@@ -96,7 +104,6 @@ export function HomeScreen() {
           position: "top",
           topOffset: 50,
         });
-        setModalVisible(false);
         setNewGroupName("");
         setNewGroupDescription("");
       }
@@ -180,7 +187,9 @@ export function HomeScreen() {
                   key={index}
                   style={styles.menuItem}
                   onPress={() => {
-                    // Handle navigation
+                    if (item.label === "Groups") {
+                      navigation.navigate("Group");
+                    }
                     toggleSidebar(false);
                   }}
                 >
@@ -280,7 +289,9 @@ export function HomeScreen() {
             <Text style={styles.sectionTitle}>Your Groups</Text>
             <TouchableOpacity
               style={styles.addButton}
-              onPress={() => setModalVisible(true)}
+              onPress={() => {
+                return;
+              }}
             >
               <Text style={styles.addButtonText}>+ Create Group</Text>
             </TouchableOpacity>
@@ -317,47 +328,6 @@ export function HomeScreen() {
           )}
         </View>
       </ScrollView>
-
-      <Modal
-        animationType="slide"
-        transparent={true}
-        visible={modalVisible}
-        onRequestClose={() => setModalVisible(false)}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Create New Group</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="Group Name"
-              value={newGroupName}
-              onChangeText={setNewGroupName}
-            />
-            <TextInput
-              style={[styles.input, styles.textArea]}
-              placeholder="Description (optional)"
-              value={newGroupDescription}
-              onChangeText={setNewGroupDescription}
-              multiline
-              numberOfLines={3}
-            />
-            <View style={styles.modalButtons}>
-              <TouchableOpacity
-                style={[styles.button, styles.cancelButton]}
-                onPress={() => setModalVisible(false)}
-              >
-                <Text style={styles.cancelButtonText}>Cancel</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.button, styles.createButton]}
-                onPress={handleCreateGroup}
-              >
-                <Text style={styles.createButtonText}>Create</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
-      </Modal>
     </SafeAreaView>
   );
 }
@@ -655,55 +625,5 @@ const styles = StyleSheet.create({
   groupDescription: {
     fontSize: 14,
     color: "#666",
-  },
-  modalContent: {
-    backgroundColor: "#fff",
-    borderRadius: 12,
-    padding: 20,
-  },
-  modalTitle: {
-    fontSize: 20,
-    fontWeight: "600",
-    color: "#1a1a1a",
-    marginBottom: 20,
-  },
-  input: {
-    backgroundColor: "#f5f5f5",
-    padding: 12,
-    borderRadius: 8,
-    marginBottom: 16,
-    fontSize: 16,
-  },
-  textArea: {
-    height: 80,
-    textAlignVertical: "top",
-  },
-  modalButtons: {
-    flexDirection: "row",
-    justifyContent: "flex-end",
-    gap: 12,
-  },
-  button: {
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    borderRadius: 8,
-    minWidth: 100,
-    alignItems: "center",
-  },
-  cancelButton: {
-    backgroundColor: "#f5f5f5",
-  },
-  createButton: {
-    backgroundColor: "#1a73e8",
-  },
-  cancelButtonText: {
-    color: "#666",
-    fontSize: 16,
-    fontWeight: "500",
-  },
-  createButtonText: {
-    color: "#fff",
-    fontSize: 16,
-    fontWeight: "500",
   },
 });

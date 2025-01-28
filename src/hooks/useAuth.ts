@@ -22,13 +22,11 @@ export function useAuth() {
       setUser(session?.user ?? null);
       setLoading(false);
 
-      if (session?.user) {
+      if (_event === "SIGNED_IN" && session?.user) {
         Toaster({
           type: "success",
           text1: "Welcome",
           text2: `Hello, ${session.user.user_metadata.name || "User"}!`,
-          position: "top",
-          topOffset: 50,
         });
       }
     });

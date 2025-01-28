@@ -53,3 +53,128 @@ $$ language plpgsql;
 create trigger update_users_updated_at
   before update on users
   for each row execute procedure update_updated_at_column();
+
+
+
+  -- Create groups table
+create table public.groups (
+  id uuid default uuid_generate_v4() primary key,
+  name text not null,
+  description text,
+  created_by uuid references auth.users(id) not null,
+  created_at timestamp with time zone default timezone('utc'::text, now()) not null,
+  updated_at timestamp with time zone default timezone('utc'::text, now()) not null
+);
+
+-- Create group_members table for managing group memberships
+create table public.group_members (
+  id uuid default uuid_generate_v4() primary key,
+  group_id uuid references public.groups(id) on delete cascade not null,
+  user_id uuid references auth.users(id) on delete cascade not null,
+  role text check (role in ('admin', 'member')) default 'member' not null,
+  joined_at timestamp with time zone default timezone('utc'::text, now()) not null,
+  unique(group_id, user_id)
+);
+
+-- Enable Row Level Security
+alter table public.groups enable row level security;
+alter table public.group_members enable row level security;
+
+-- Function to automatically add creator as admin member when creating a group
+create or replace function public.handle_new_group()
+returns trigger
+language plpgsql
+security definer set search_path = public
+as $$
+begin
+  insert into public.group_members (group_id, user_id, role)
+  values (new.id, new.created_by, 'admin');
+  return new;
+end;
+$$;
+
+-- Trigger to execute the function after a group is created
+create trigger on_group_created
+  after insert on public.groups
+  for each row execute procedure public.handle_new_group();
+
+-- Create policies for groups table
+create policy "Users can view groups they are members of"
+  on groups for select
+  using (
+    auth.uid() in (
+      select user_id 
+      from group_members 
+      where group_id = groups.id
+    )
+  );
+
+create policy "Users can create groups"
+  on groups for insert
+  with check (auth.uid() = created_by);
+
+create policy "Group admins can update groups"
+  on groups for update
+  using (
+    auth.uid() in (
+      select user_id 
+      from group_members 
+      where group_id = groups.id 
+      and role = 'admin'
+    )
+  );
+
+create policy "Group admins can delete groups"
+  on groups for delete
+  using (
+    auth.uid() in (
+      select user_id 
+      from group_members 
+      where group_id = groups.id 
+      and role = 'admin'
+    )
+  );
+
+-- Create policies for group_members table
+create policy "Users can view members of their groups"
+  on group_members for select
+  using (
+    auth.uid() in (
+      select user_id 
+      from group_members 
+      where group_id = group_members.group_id
+    )
+  );
+
+create policy "Group admins can add members"
+  on group_members for insert
+  with check (
+    auth.uid() in (
+      select user_id 
+      from group_members 
+      where group_id = group_members.group_id 
+      and role = 'admin'
+    )
+  );
+
+create policy "Group admins can update member roles"
+  on group_members for update
+  using (
+    auth.uid() in (
+      select user_id 
+      from group_members 
+      where group_id = group_members.group_id 
+      and role = 'admin'
+    )
+  );
+
+create policy "Group admins can remove members"
+  on group_members for delete
+  using (
+    auth.uid() in (
+      select user_id 
+      from group_members 
+      where group_id = group_members.group_id 
+      and role = 'admin'
+    )
+  );
