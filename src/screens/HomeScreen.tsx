@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import {
   StyleSheet,
   View,
@@ -21,19 +21,23 @@ import Icon from "react-native-vector-icons/MaterialIcons";
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { CreateGroupModal } from "../components/CreateGroupModal";
+import { Group } from "../types/types";
+import EmptyGroup from "../components/EmptyGroup";
+import GroupList from "../components/GroupList";
+import { useGroups } from "../hooks/useGroups";
 
 const { StatusBarManager } = NativeModules;
 const { width } = Dimensions.get("window");
 
-interface Group {
-  id: string;
-  name: string;
-  description?: string;
-  created_at: string;
-}
-
 type RootStackParamList = {
   Group: undefined;
+  GroupDetails: {
+    id: string;
+    name: string;
+    icon: string;
+    color: string;
+    memberCount: number;
+  };
   // add other screens here
 };
 
@@ -41,10 +45,9 @@ type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
 export function HomeScreen() {
   const { user, signOut } = useAuth();
+  const { groups, groupsLoading, fetchGroups } = useGroups(user?.id || "");
+
   const [statusBarHeight, setStatusBarHeight] = React.useState(0);
-  const [groups, setGroups] = useState<Group[]>([]);
-  const [newGroupName, setNewGroupName] = useState("");
-  const [newGroupDescription, setNewGroupDescription] = useState("");
   const [isSidebarOpen, setSidebarOpen] = useState(false);
   const [isCreateGroupModal, setIsCreateGroupModal] = useState(false);
   const slideAnim = useRef(new Animated.Value(-width)).current;
@@ -72,53 +75,9 @@ export function HomeScreen() {
     }).start();
   };
 
-  const handleCreateGroup = async () => {
-    if (!newGroupName.trim()) {
-      Toaster({
-        type: "error",
-        text1: "Error",
-        text2: "Group name is required",
-        position: "top",
-        topOffset: 50,
-      });
-      return;
-    }
-
-    try {
-      const { data, error } = await supabase
-        .from("groups")
-        .insert([
-          {
-            name: newGroupName.trim(),
-            description: newGroupDescription.trim(),
-          },
-        ])
-        .select();
-
-      if (error) throw error;
-
-      if (data) {
-        setGroups([...groups, data[0]]);
-        Toaster({
-          type: "success",
-          text1: "Success",
-          text2: "Group created successfully",
-          position: "top",
-          topOffset: 50,
-        });
-        setNewGroupName("");
-        setNewGroupDescription("");
-      }
-    } catch (error: any) {
-      Toaster({
-        type: "error",
-        text1: "Error",
-        text2: error.message,
-        position: "top",
-        topOffset: 50,
-      });
-    }
-  };
+  useEffect(() => {
+    fetchGroups();
+  }, [user]);
 
   const menuItems = [
     { icon: "dashboard", label: "Dashboard" },
@@ -310,34 +269,11 @@ export function HomeScreen() {
             />
           )}
 
-          {groups.length === 0 ? (
-            <View style={styles.emptyState}>
-              <Text style={styles.emptyStateText}>
-                You haven't created any groups yet
-              </Text>
-              <Text style={styles.emptyStateSubText}>
-                Create a group to start managing expenses together
-              </Text>
-            </View>
-          ) : (
-            <View style={styles.groupsList}>
-              {groups.map((group) => (
-                <TouchableOpacity
-                  key={group.id}
-                  style={styles.groupCard}
-                  onPress={() => {
-                    // Handle group selection
-                  }}
-                >
-                  <Text style={styles.groupName}>{group.name}</Text>
-                  {group.description && (
-                    <Text style={styles.groupDescription}>
-                      {group.description}
-                    </Text>
-                  )}
-                </TouchableOpacity>
-              ))}
-            </View>
+          {groups.length === 0 && !groupsLoading && (
+            <EmptyGroup setModalVisible={setIsCreateGroupModal} />
+          )}
+          {groups.length > 0 && (
+            <GroupList groups={groups} loading={groupsLoading} />
           )}
         </View>
       </ScrollView>
@@ -590,53 +526,5 @@ const styles = StyleSheet.create({
     color: "#fff",
     fontSize: 14,
     fontWeight: "500",
-  },
-  emptyState: {
-    alignItems: "center",
-    padding: 32,
-    backgroundColor: "#fff",
-    borderRadius: 12,
-    marginVertical: 16,
-  },
-  emptyStateText: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: "#1a1a1a",
-    marginBottom: 8,
-  },
-  emptyStateSubText: {
-    fontSize: 14,
-    color: "#666",
-    textAlign: "center",
-  },
-  groupsList: {
-    marginTop: 16,
-  },
-  groupCard: {
-    backgroundColor: "#fff",
-    padding: 16,
-    borderRadius: 12,
-    marginBottom: 12,
-    ...Platform.select({
-      ios: {
-        shadowColor: "#000",
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.1,
-        shadowRadius: 8,
-      },
-      android: {
-        elevation: 4,
-      },
-    }),
-  },
-  groupName: {
-    fontSize: 18,
-    fontWeight: "600",
-    color: "#1a1a1a",
-    marginBottom: 4,
-  },
-  groupDescription: {
-    fontSize: 14,
-    color: "#666",
   },
 });
