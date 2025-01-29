@@ -13,15 +13,12 @@ import {
   Animated,
   Dimensions,
 } from "react-native";
-import Toaster from "../utils/toasterConfig";
 import { PlatformView } from "../components/PlatformView";
-import { supabase } from "../lib/supabase";
 import { useAuth } from "../hooks/useAuth";
 import Icon from "react-native-vector-icons/MaterialIcons";
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { CreateGroupModal } from "../components/CreateGroupModal";
-import { Group } from "../types/types";
 import EmptyGroup from "../components/EmptyGroup";
 import GroupList from "../components/GroupList";
 import { useGroups } from "../hooks/useGroups";

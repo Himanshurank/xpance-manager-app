@@ -10,7 +10,7 @@ import {
   ActivityIndicator,
 } from "react-native";
 import Icon from "react-native-vector-icons/MaterialIcons";
-import { supabase } from "../lib/supabase";
+import { useGroups } from "../hooks/useGroups";
 import Toaster from "../utils/toasterConfig";
 
 interface CreateGroupModalProps {
@@ -45,15 +45,6 @@ const COLORS = [
 type IconType = (typeof ICONS)[number];
 type ColorType = (typeof COLORS)[number];
 
-interface Group {
-  id: string;
-  name: string;
-  icon: string;
-  color: string;
-  created_by: string;
-  created_at: string;
-}
-
 export function CreateGroupModal({
   visible,
   onClose,
@@ -64,6 +55,7 @@ export function CreateGroupModal({
   const [selectedIcon, setSelectedIcon] = useState<IconType>("people");
   const [selectedColor, setSelectedColor] = useState<ColorType>("#1a73e8");
   const [loading, setLoading] = useState(false);
+  const { createGroup } = useGroups(userId);
 
   const resetForm = () => {
     setName("");
@@ -93,78 +85,21 @@ export function CreateGroupModal({
     setLoading(true);
 
     try {
-      // First check if user already has a group with this name
-      const { data: existingGroups, error: checkError } = await supabase
-        .from("groups")
-        .select("id, name")
-        .eq("created_by", userId)
-        .eq("name", name.trim())
-        .single();
-
-      if (checkError && checkError.code !== "PGRST116") {
-        // PGRST116 means no rows returned
-        throw checkError;
-      }
-
-      if (existingGroups) {
-        Toaster({
-          type: "error",
-          text1: "Error",
-          text2: "You already have a group with this name",
-        });
-        setLoading(false);
-        return;
-      }
-
-      // Create the group if no duplicate exists
-      const { data: newGroup, error: groupError } = await supabase
-        .from("groups")
-        .insert([
-          {
-            name: name.trim(),
-            icon: selectedIcon,
-            color: selectedColor,
-            created_by: userId,
-          },
-        ])
-        .select()
-        .single();
-
-      if (groupError) throw groupError;
-
-      // Create the group member entry
-      const { error: memberError } = await supabase
-        .from("group_members")
-        .insert([
-          {
-            group_id: newGroup.id,
-            user_id: userId,
-            role: "admin",
-          },
-        ]);
-
-      if (memberError) {
-        // Rollback group creation if member creation fails
-        await supabase.from("groups").delete().eq("id", newGroup.id);
-        throw memberError;
-      }
-
-      Toaster({
-        type: "success",
-        text1: "Success",
-        text2: "Group created successfully",
+      const newGroup = await createGroup({
+        name: name.trim(),
+        icon: selectedIcon,
+        color: selectedColor,
+        created_by: userId,
+        description: ""  // Add empty description if required
       });
 
-      resetForm();
-      onSuccess();
-      onClose();
-    } catch (error: any) {
-      console.error("Error creating group:", error);
-      Toaster({
-        type: "error",
-        text1: "Error",
-        text2: error.message || "Failed to create group",
-      });
+      if (newGroup) {
+        resetForm();
+        onSuccess();
+        onClose();
+      }
+    } catch (error) {
+      console.error("Error in handleCreate:", error);
     } finally {
       setLoading(false);
     }

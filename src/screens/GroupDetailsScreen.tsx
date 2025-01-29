@@ -7,12 +7,15 @@ import {
   SafeAreaView,
   ScrollView,
   Modal,
+  ActivityIndicator,
+  TextInput,
 } from "react-native";
 import Icon from "react-native-vector-icons/MaterialIcons";
 import { useNavigation, useRoute } from "@react-navigation/native";
-import { supabase } from "../lib/supabase";
 import { useAuth } from "../hooks/useAuth";
+import { supabase } from "../lib/supabase";
 import Toaster from "../utils/toasterConfig";
+import { useGroupMembers } from "../hooks/useGroupMembers";
 
 interface GroupDetailsParams {
   id: string;
@@ -22,79 +25,25 @@ interface GroupDetailsParams {
   memberCount: number;
 }
 
-interface Member {
-  id: string;
-  email: string;
-  name: string;
-  role: "admin" | "member";
-}
-
-interface MemberResponse {
-  user_id: string;
-  role: "admin" | "member";
-  users: {
-    name: string;
-    email: string;
-  };
+interface AddMemberModalProps {
+  visible: boolean;
+  onClose: () => void;
+  onAdd: (email: string) => Promise<void>;
+  loading: boolean;
 }
 
 export function GroupDetailsScreen() {
-  const navigation = useNavigation();
   const route = useRoute();
   const { id, name, icon, color, memberCount } =
     route.params as GroupDetailsParams;
-  const [members, setMembers] = useState<Member[]>([]);
-  const [loading, setLoading] = useState(true);
+
+  const navigation = useNavigation();
+  const { members, membersLoading, fetchMembers } = useGroupMembers(id);
+
   const [showMembersModal, setShowMembersModal] = useState(false);
   const { user } = useAuth();
-
-  const fetchMembers = async () => {
-    try {
-      // First get group members
-      const { data: memberData, error: memberError } = await supabase
-        .from("group_members")
-        .select("user_id, role")
-        .eq("group_id", id);
-
-      if (memberError) throw memberError;
-
-      if (!memberData) {
-        setMembers([]);
-        return;
-      }
-
-      // Then get user details for each member
-      const userIds = memberData.map((member) => member.user_id);
-      const { data: userData, error: userError } = await supabase
-        .from("users")
-        .select("id, name, email")
-        .in("id", userIds);
-
-      if (userError) throw userError;
-
-      // Combine the data
-      const transformedMembers: Member[] = memberData.map((member) => {
-        const user = userData?.find((u) => u.id === member.user_id);
-        return {
-          id: member.user_id,
-          email: user?.email || "",
-          name: user?.name || "Unknown",
-          role: member.role,
-        };
-      });
-
-      setMembers(transformedMembers);
-    } catch (error) {
-      console.error("Error fetching members:", error);
-      Toaster({
-        type: "error",
-        text1: "Error",
-        text2: "Failed to load members",
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
+  const [showAddMemberModal, setShowAddMemberModal] = useState(false);
+  const [addingMember, setAddingMember] = useState(false);
 
   useEffect(() => {
     fetchMembers();
@@ -154,6 +103,154 @@ export function GroupDetailsScreen() {
     </Modal>
   );
 
+  const handleAddMember = async (email: string) => {
+    setAddingMember(true);
+    try {
+      const { data: userData, error: userError } = await supabase
+        .from("users")
+        .select("id")
+        .eq("email", email.toLowerCase())
+        .single();
+
+      if (userError) {
+        Toaster({
+          type: "error",
+          text1: "Error",
+          text2: "User not found",
+        });
+        return;
+      }
+
+      const { data: existingMember, error: memberCheckError } = await supabase
+        .from("group_members")
+        .select("id")
+        .eq("group_id", id)
+        .eq("user_id", userData.id)
+        .single();
+
+      if (existingMember) {
+        Toaster({
+          type: "error",
+          text1: "Error",
+          text2: "User is already a member",
+        });
+        return;
+      }
+
+      const { error: addError } = await supabase.from("group_members").insert([
+        {
+          group_id: id,
+          user_id: userData.id,
+          role: "member",
+        },
+      ]);
+
+      if (addError) throw addError;
+
+      Toaster({
+        type: "success",
+        text1: "Success",
+        text2: "Member added successfully",
+      });
+
+      setShowAddMemberModal(false);
+      fetchMembers();
+    } catch (error: any) {
+      console.error("Error adding member:", error);
+      Toaster({
+        type: "error",
+        text1: "Error",
+        text2: error.message || "Failed to add member",
+      });
+    } finally {
+      setAddingMember(false);
+    }
+  };
+
+  const AddMemberModal = ({
+    visible,
+    onClose,
+    onAdd,
+    loading,
+  }: AddMemberModalProps) => {
+    const [email, setEmail] = useState("");
+
+    const handleSubmit = async () => {
+      if (!email.trim()) {
+        Toaster({
+          type: "error",
+          text1: "Error",
+          text2: "Please enter an email address",
+        });
+        return;
+      }
+      await onAdd(email.trim());
+      setEmail("");
+    };
+
+    return (
+      <Modal
+        visible={visible}
+        transparent={true}
+        animationType="slide"
+        onRequestClose={onClose}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Add New Member</Text>
+              <TouchableOpacity onPress={onClose} style={styles.closeButton}>
+                <Icon name="close" size={24} color="#666" />
+              </TouchableOpacity>
+            </View>
+
+            <View style={styles.inputContainer}>
+              <Text style={styles.inputLabel}>Member Email</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="Enter email address"
+                value={email}
+                onChangeText={setEmail}
+                keyboardType="email-address"
+                autoCapitalize="none"
+                autoCorrect={false}
+              />
+            </View>
+
+            <View style={styles.modalButtons}>
+              <TouchableOpacity
+                style={[styles.button, styles.cancelButton]}
+                onPress={onClose}
+                disabled={loading}
+              >
+                <Text style={styles.cancelButtonText}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.button, styles.addButton]}
+                onPress={handleSubmit}
+                disabled={loading}
+              >
+                {loading ? (
+                  <ActivityIndicator color="#fff" size="small" />
+                ) : (
+                  <Text style={styles.addButtonText}>Add Member</Text>
+                )}
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+    );
+  };
+
+  if (membersLoading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#1a73e8" />
+      </View>
+    );
+  }
+
   return (
     <SafeAreaView style={styles.container}>
       {/* Header */}
@@ -184,7 +281,10 @@ export function GroupDetailsScreen() {
           <Text style={styles.actionText}>Add Expense</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.actionButton}>
+        <TouchableOpacity
+          style={styles.actionButton}
+          onPress={() => setShowAddMemberModal(true)}
+        >
           <View style={[styles.actionIcon, { backgroundColor: "#1a73e8" }]}>
             <Icon name="person-add" size={24} color="#fff" />
           </View>
@@ -202,25 +302,27 @@ export function GroupDetailsScreen() {
       {/* Content */}
       <ScrollView style={styles.content}>
         {/* Members Section */}
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Members ({memberCount})</Text>
-            <TouchableOpacity onPress={() => setShowMembersModal(true)}>
-              <Text style={styles.seeAllText}>See All</Text>
-            </TouchableOpacity>
-          </View>
-          {/* Show first 3 members in the preview */}
-          {members.slice(0, 3).map((member) => (
-            <View key={member.id} style={styles.memberPreview}>
-              <View style={styles.memberAvatar}>
-                <Text style={styles.avatarText}>
-                  {member.name[0].toUpperCase()}
-                </Text>
-              </View>
-              <Text style={styles.memberPreviewName}>{member.name}</Text>
+        {!membersLoading && (
+          <View style={styles.section}>
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionTitle}>Members ({memberCount})</Text>
+              <TouchableOpacity onPress={() => setShowMembersModal(true)}>
+                <Text style={styles.seeAllText}>See All</Text>
+              </TouchableOpacity>
             </View>
-          ))}
-        </View>
+            {/* Show first 3 members in the preview */}
+            {members.slice(0, 3).map((member) => (
+              <View key={member.id} style={styles.memberPreview}>
+                <View style={styles.memberAvatar}>
+                  <Text style={styles.avatarText}>
+                    {member.name[0].toUpperCase()}
+                  </Text>
+                </View>
+                <Text style={styles.memberPreviewName}>{member.name}</Text>
+              </View>
+            ))}
+          </View>
+        )}
 
         {/* Recent Expenses Section */}
         <View style={styles.section}>
@@ -241,6 +343,12 @@ export function GroupDetailsScreen() {
       </ScrollView>
 
       <MembersModal />
+      <AddMemberModal
+        visible={showAddMemberModal}
+        onClose={() => setShowAddMemberModal(false)}
+        onAdd={handleAddMember}
+        loading={addingMember}
+      />
     </SafeAreaView>
   );
 }
@@ -443,5 +551,59 @@ const styles = StyleSheet.create({
   },
   closeButton: {
     padding: 8,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "#fff",
+  },
+  inputContainer: {
+    marginBottom: 24,
+    paddingHorizontal: 20,
+  },
+  inputLabel: {
+    fontSize: 16,
+    fontWeight: "500",
+    color: "#1a1a1a",
+    marginBottom: 8,
+  },
+  input: {
+    backgroundColor: "#f5f5f5",
+    padding: 16,
+    borderRadius: 8,
+    fontSize: 16,
+    borderWidth: 1,
+    borderColor: "#e0e0e0",
+  },
+  modalButtons: {
+    flexDirection: "row",
+    justifyContent: "flex-end",
+    gap: 12,
+    paddingHorizontal: 20,
+    paddingBottom: 20,
+  },
+  button: {
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 8,
+    minWidth: 100,
+    alignItems: "center",
+  },
+  cancelButton: {
+    backgroundColor: "#f5f5f5",
+  },
+  addButton: {
+    backgroundColor: "#1a73e8",
+  },
+  cancelButtonText: {
+    color: "#666",
+    fontSize: 16,
+    fontWeight: "500",
+  },
+  addButtonText: {
+    color: "#fff",
+    fontSize: 16,
+    fontWeight: "600",
   },
 });

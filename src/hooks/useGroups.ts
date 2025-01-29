@@ -7,6 +7,7 @@ export const useGroups = (userId: string) => {
   const [groups, setGroups] = useState<Group[]>([]);
   const [groupsLoading, setGroupsLoading] = useState(true);
 
+  // Get all groups for a user
   const fetchGroups = async () => {
     if (!userId) {
       setGroupsLoading(false);
@@ -15,45 +16,53 @@ export const useGroups = (userId: string) => {
 
     try {
       setGroupsLoading(true);
-      const { data: memberGroups, error: memberError } = await supabase
+
+      const { data: memberGroups, error: memberError } = (await supabase
         .from("group_members")
-        .select("group_id");
+        .select(
+          `
+          group_id,
+          groups (
+            id,
+            name,
+            description,
+            created_at,
+            icon,
+            color
+          )
+        `
+        )
+        .eq("user_id", userId)) as {
+        data: { group_id: string; groups: Group }[] | null;
+        error: any;
+      };
 
       if (memberError) throw memberError;
 
-      const groupIds = memberGroups?.map((mg) => mg.group_id) || [];
-
-      const { data: groups, error: groupsError } = await supabase
-        .from("groups")
-        .select("*")
-        .in("id", groupIds);
-
-      if (groupsError) throw groupsError;
-
-      if (!groups) {
+      if (!memberGroups || memberGroups.length === 0) {
         setGroups([]);
         return;
       }
 
-      const transformedGroups: Group[] = groups.map((group) => ({
-        id: group.id,
-        name: group.name,
-        description: group.description,
-        created_at: group.created_at,
-        member_count: 0,
-        icon: group.icon,
-        color: group.color,
-      }));
+      const transformedGroups = await Promise.all(
+        memberGroups
+          .filter((mg) => mg.groups)
+          .map(async (mg) => {
+            const { count } = await supabase
+              .from("group_members")
+              .select("*", { count: "exact", head: true })
+              .eq("group_id", mg.group_id);
 
-      // Get member counts
-      for (let group of transformedGroups) {
-        const { count } = await supabase
-          .from("group_members")
-          .select("*", { count: "exact", head: true })
-          .eq("group_id", group.id);
-
-        group.member_count = count || 0;
-      }
+            return {
+              ...mg.groups,
+              icon: mg.groups.icon || "group",
+              color: mg.groups.color || "#1a73e8",
+              member_count: count || 0,
+              created_by: userId,
+              updated_at: mg.groups.created_at,
+            };
+          })
+      );
 
       const sortedGroups = transformedGroups.sort(
         (a, b) =>
@@ -61,7 +70,7 @@ export const useGroups = (userId: string) => {
       );
 
       setGroups(sortedGroups);
-    } catch (error: any) {
+    } catch (error) {
       console.error("Error fetching groups:", error);
       Toaster({
         type: "error",
@@ -73,5 +82,94 @@ export const useGroups = (userId: string) => {
     }
   };
 
-  return { groups, groupsLoading, fetchGroups };
+  // Create a new group
+  const createGroup = async (
+    groupData: Omit<Group, "id" | "created_at" | "updated_at" | "member_count">
+  ) => {
+    try {
+      const { data, error } = await supabase
+        .from("groups")
+        .insert([groupData])
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      // No need to manually create group_member - trigger will handle it
+      await fetchGroups(); // Refresh groups list
+      
+      Toaster({
+        type: "success",
+        text1: "Success",
+        text2: "Group created successfully",
+      });
+
+      return data;
+    } catch (error) {
+      console.error("Error creating group:", error);
+      Toaster({
+        type: "error",
+        text1: "Error",
+        text2: "Failed to create group",
+      });
+      throw error;
+    }
+  };
+
+  // Update a group
+  const updateGroup = async (groupId: string, updates: Partial<Group>) => {
+    try {
+      const { data, error } = await supabase
+        .from("groups")
+        .update(updates)
+        .eq("id", groupId)
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      await fetchGroups(); // Refresh groups list
+      return data;
+    } catch (error) {
+      console.error("Error updating group:", error);
+      Toaster({
+        type: "error",
+        text1: "Error",
+        text2: "Failed to update group",
+      });
+      return null;
+    }
+  };
+
+  // Delete a group
+  const deleteGroup = async (groupId: string) => {
+    try {
+      const { error } = await supabase
+        .from("groups")
+        .delete()
+        .eq("id", groupId);
+
+      if (error) throw error;
+
+      await fetchGroups(); // Refresh groups list
+      return true;
+    } catch (error) {
+      console.error("Error deleting group:", error);
+      Toaster({
+        type: "error",
+        text1: "Error",
+        text2: "Failed to delete group",
+      });
+      return false;
+    }
+  };
+
+  return {
+    groups,
+    groupsLoading,
+    fetchGroups,
+    createGroup,
+    updateGroup,
+    deleteGroup,
+  };
 };
