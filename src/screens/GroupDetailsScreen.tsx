@@ -20,6 +20,7 @@ import Toaster from "../utils/toasterConfig";
 import { useGroupMembers } from "../hooks/useGroupMembers";
 import { GroupSettingsModal } from "../components/GroupSettingsModal";
 import { useGroups } from "../hooks/useGroups";
+import { NavigationProp } from "@react-navigation/native";
 
 interface GroupDetailsParams {
   id: string;
@@ -38,26 +39,41 @@ interface AddMemberModalProps {
 
 export function GroupDetailsScreen() {
   const route = useRoute<any>();
-  const navigation = useNavigation();
+  const navigation = useNavigation<
+    NavigationProp<{
+      GroupDetails: GroupDetailsParams;
+    }>
+  >();
   const { user } = useAuth();
-  const { id, name, icon, color, memberCount } =
-    route.params as GroupDetailsParams;
-  const { members, membersLoading, fetchMembers } = useGroupMembers(id);
+  const { id: groupId } = route.params as { id: string };
+  const { groups } = useGroups(user?.id || "");
+  const { members, membersLoading, fetchMembers } = useGroupMembers(groupId);
 
   const [showMembersModal, setShowMembersModal] = useState(false);
   const [showAddMemberModal, setShowAddMemberModal] = useState(false);
   const [addingMember, setAddingMember] = useState(false);
   const [showSettingsModal, setShowSettingsModal] = useState(false);
 
-  // Find current user is admin of the group
-  const isAdmin = members.some(
-    (member) => member.id === user?.id && member.role === "admin"
-  );
+  // Find current group from groups array
+  const currentGroup = groups.find((g) => g.id === groupId);
+  const isAdmin = members.find((m) => m.id === user?.id)?.role === "admin";
+
+  // Update navigation params when group data changes
+  useEffect(() => {
+    if (currentGroup) {
+      navigation.setParams({
+        name: currentGroup.name,
+        icon: currentGroup.icon,
+        color: currentGroup.color,
+        memberCount: currentGroup.member_count,
+      });
+    }
+  }, [currentGroup]);
 
   // Initial data fetch
   useEffect(() => {
     fetchMembers();
-  }, [id]);
+  }, [groupId]);
 
   if (membersLoading) {
     return (
@@ -142,7 +158,7 @@ export function GroupDetailsScreen() {
       const { data: existingMember, error: memberCheckError } = await supabase
         .from("group_members")
         .select("id")
-        .eq("group_id", id)
+        .eq("group_id", groupId)
         .eq("user_id", userData.id)
         .single();
 
@@ -157,7 +173,7 @@ export function GroupDetailsScreen() {
 
       const { error: addError } = await supabase.from("group_members").insert([
         {
-          group_id: id,
+          group_id: groupId,
           user_id: userData.id,
           role: "member",
         },
@@ -277,10 +293,15 @@ export function GroupDetailsScreen() {
           <Icon name="arrow-back" size={24} color="#1a1a1a" />
         </TouchableOpacity>
         <View style={styles.headerTitle}>
-          <View style={[styles.groupIcon, { backgroundColor: color }]}>
-            <Icon name={icon || "group"} size={24} color="#fff" />
+          <View
+            style={[
+              styles.groupIcon,
+              { backgroundColor: currentGroup?.color || "#1a73e8" },
+            ]}
+          >
+            <Icon name={currentGroup?.icon || "group"} size={24} color="#fff" />
           </View>
-          <Text style={styles.groupName}>{name}</Text>
+          <Text style={styles.groupName}>{currentGroup?.name || ""}</Text>
         </View>
         <TouchableOpacity
           style={styles.moreButton}
@@ -323,7 +344,9 @@ export function GroupDetailsScreen() {
         {!membersLoading && (
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
-              <Text style={styles.sectionTitle}>Members ({memberCount})</Text>
+              <Text style={styles.sectionTitle}>
+                Members ({currentGroup?.member_count || 0})
+              </Text>
               <TouchableOpacity onPress={() => setShowMembersModal(true)}>
                 <Text style={styles.seeAllText}>See All</Text>
               </TouchableOpacity>
@@ -370,10 +393,10 @@ export function GroupDetailsScreen() {
       <GroupSettingsModal
         visible={showSettingsModal}
         onClose={() => setShowSettingsModal(false)}
-        groupId={id}
-        groupName={name}
-        groupIcon={icon || "group"}
-        groupColor={color || "#1a73e8"}
+        groupId={groupId}
+        groupName={currentGroup?.name || ""}
+        groupIcon={currentGroup?.icon || ""}
+        groupColor={currentGroup?.color || ""}
         isAdmin={isAdmin}
         navigation={navigation}
       />
