@@ -7,7 +7,6 @@ export const useGroups = (userId: string) => {
   const [groups, setGroups] = useState<Group[]>([]);
   const [groupsLoading, setGroupsLoading] = useState(true);
 
-  // Get all groups for a user
   const fetchGroups = async () => {
     if (!userId) {
       setGroupsLoading(false);
@@ -16,26 +15,10 @@ export const useGroups = (userId: string) => {
 
     try {
       setGroupsLoading(true);
-
-      const { data: memberGroups, error: memberError } = (await supabase
+      const { data: memberGroups, error: memberError } = await supabase
         .from("group_members")
-        .select(
-          `
-          group_id,
-          groups (
-            id,
-            name,
-            description,
-            created_at,
-            icon,
-            color
-          )
-        `
-        )
-        .eq("user_id", userId)) as {
-        data: { group_id: string; groups: Group }[] | null;
-        error: any;
-      };
+        .select("group_id")
+        .eq("user_id", userId);
 
       if (memberError) throw memberError;
 
@@ -44,32 +27,34 @@ export const useGroups = (userId: string) => {
         return;
       }
 
-      const transformedGroups = await Promise.all(
-        memberGroups
-          .filter((mg) => mg.groups)
-          .map(async (mg) => {
-            const { count } = await supabase
-              .from("group_members")
-              .select("*", { count: "exact", head: true })
-              .eq("group_id", mg.group_id);
+      const groupIds = memberGroups.map((mg) => mg.group_id);
+      const { data: groupsData, error: groupsError } = await supabase
+        .from("groups")
+        .select("*")
+        .in("id", groupIds);
 
-            return {
-              ...mg.groups,
-              icon: mg.groups.icon || "group",
-              color: mg.groups.color || "#1a73e8",
-              member_count: count || 0,
-              created_by: userId,
-              updated_at: mg.groups.created_at,
-            };
-          })
+      if (groupsError) throw groupsError;
+
+      if (!groupsData) {
+        setGroups([]);
+        return;
+      }
+
+      const groupsWithCounts = await Promise.all(
+        groupsData.map(async (group) => {
+          const { count } = await supabase
+            .from("group_members")
+            .select("*", { count: "exact", head: true })
+            .eq("group_id", group.id);
+
+          return {
+            ...group,
+            member_count: count || 0,
+          };
+        })
       );
 
-      const sortedGroups = transformedGroups.sort(
-        (a, b) =>
-          new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-      );
-
-      setGroups(sortedGroups);
+      setGroups(groupsWithCounts);
     } catch (error) {
       console.error("Error fetching groups:", error);
       Toaster({
@@ -97,7 +82,7 @@ export const useGroups = (userId: string) => {
 
       // No need to manually create group_member - trigger will handle it
       await fetchGroups(); // Refresh groups list
-      
+
       Toaster({
         type: "success",
         text1: "Success",
@@ -117,25 +102,46 @@ export const useGroups = (userId: string) => {
   };
 
   // Update a group
-  const updateGroup = async (groupId: string, updates: Partial<Group>) => {
+  const updateGroup = async (groupId: string, updatedData: Partial<Group>) => {
     try {
       const { data, error } = await supabase
         .from("groups")
-        .update(updates)
+        .update({
+          name: updatedData.name,
+          icon: updatedData.icon,
+          color: updatedData.color,
+        })
         .eq("id", groupId)
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error("Update error:", error);
+        throw error;
+      }
 
-      await fetchGroups(); // Refresh groups list
+      // Immediately update local state with complete data
+      setGroups((prevGroups) =>
+        prevGroups.map((group) =>
+          group.id === groupId
+            ? { ...group, ...data } // Use returned data instead of updatedData
+            : group
+        )
+      );
+
+      Toaster({
+        type: "success",
+        text1: "Success",
+        text2: "Group updated successfully",
+      });
+
       return data;
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error updating group:", error);
       Toaster({
         type: "error",
         text1: "Error",
-        text2: "Failed to update group",
+        text2: error.message || "Failed to update group",
       });
       return null;
     }

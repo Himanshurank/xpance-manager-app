@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Modal,
   View,
@@ -18,6 +18,13 @@ interface CreateGroupModalProps {
   onClose: () => void;
   onSuccess: () => void;
   userId: string;
+  mode?: "create" | "edit";
+  groupData?: {
+    id: string;
+    name: string;
+    icon: string;
+    color: string;
+  };
 }
 
 const ICONS = [
@@ -50,20 +57,38 @@ export function CreateGroupModal({
   onClose,
   onSuccess,
   userId,
+  mode = "create",
+  groupData,
 }: CreateGroupModalProps) {
   const [name, setName] = useState("");
   const [selectedIcon, setSelectedIcon] = useState<IconType>("people");
   const [selectedColor, setSelectedColor] = useState<ColorType>("#1a73e8");
   const [loading, setLoading] = useState(false);
-  const { createGroup } = useGroups(userId);
+  const { createGroup, updateGroup } = useGroups(userId);
+
+  useEffect(() => {
+    if (mode === "edit" && groupData && visible) {
+      setName(groupData.name);
+      if (ICONS.includes(groupData.icon as IconType)) {
+        setSelectedIcon(groupData.icon as IconType);
+      }
+      if (COLORS.includes(groupData.color as ColorType)) {
+        setSelectedColor(groupData.color as ColorType);
+      }
+    } else if (!visible) {
+      resetForm();
+    }
+  }, [mode, groupData, visible]);
 
   const resetForm = () => {
-    setName("");
-    setSelectedIcon("people");
-    setSelectedColor("#1a73e8");
+    if (mode === "create") {
+      setName("");
+      setSelectedIcon("people");
+      setSelectedColor("#1a73e8");
+    }
   };
 
-  const handleCreate = async () => {
+  const handleSubmit = async () => {
     if (!name.trim()) {
       Toaster({
         type: "error",
@@ -85,21 +110,48 @@ export function CreateGroupModal({
     setLoading(true);
 
     try {
-      const newGroup = await createGroup({
-        name: name.trim(),
-        icon: selectedIcon,
-        color: selectedColor,
-        created_by: userId,
-        description: ""  // Add empty description if required
-      });
+      if (mode === "edit" && groupData) {
+        const updates = {
+          name: name.trim(),
+          icon: selectedIcon,
+          color: selectedColor,
+        };
 
-      if (newGroup) {
-        resetForm();
-        onSuccess();
-        onClose();
+        console.log('Starting group update:', {
+          groupId: groupData.id,
+          updates
+        });
+
+        const result = await updateGroup(groupData.id, updates);
+        
+        if (result) {
+          console.log('Update successful:', result);
+          onSuccess();
+          onClose();
+        }
+      } else {
+        const result = await createGroup({
+          name: name.trim(),
+          icon: selectedIcon,
+          color: selectedColor,
+          created_by: userId,
+        });
+
+        if (result) {
+          Toaster({
+            type: "success",
+            text1: "Success",
+            text2: "Group created successfully",
+          });
+          onSuccess();
+          onClose();
+        }
       }
     } catch (error) {
-      console.error("Error in handleCreate:", error);
+      console.error(
+        `Error ${mode === "edit" ? "updating" : "creating"} group:`,
+        error
+      );
     } finally {
       setLoading(false);
     }
@@ -115,7 +167,9 @@ export function CreateGroupModal({
       <View style={styles.modalOverlay}>
         <View style={styles.modalContent}>
           <View style={styles.modalHeader}>
-            <Text style={styles.modalTitle}>Create New Group</Text>
+            <Text style={styles.modalTitle}>
+              {mode === "edit" ? "Edit Group" : "Create New Group"}
+            </Text>
             <TouchableOpacity onPress={onClose} style={styles.closeButton}>
               <Icon name="close" size={24} color="#666" />
             </TouchableOpacity>
@@ -193,13 +247,15 @@ export function CreateGroupModal({
                 { backgroundColor: selectedColor },
                 loading && styles.disabledButton,
               ]}
-              onPress={handleCreate}
+              onPress={handleSubmit}
               disabled={loading}
             >
               {loading ? (
                 <ActivityIndicator color="#fff" size="small" />
               ) : (
-                <Text style={styles.createButtonText}>Create Group</Text>
+                <Text style={styles.createButtonText}>
+                  {mode === "edit" ? "Save Changes" : "Create Group"}
+                </Text>
               )}
             </TouchableOpacity>
           </View>

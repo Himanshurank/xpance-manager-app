@@ -9,6 +9,8 @@ import {
   Modal,
   ActivityIndicator,
   TextInput,
+  KeyboardAvoidingView,
+  Platform,
 } from "react-native";
 import Icon from "react-native-vector-icons/MaterialIcons";
 import { useNavigation, useRoute } from "@react-navigation/native";
@@ -16,6 +18,7 @@ import { useAuth } from "../hooks/useAuth";
 import { supabase } from "../lib/supabase";
 import Toaster from "../utils/toasterConfig";
 import { useGroupMembers } from "../hooks/useGroupMembers";
+import { GroupSettingsModal } from "../components/GroupSettingsModal";
 
 interface GroupDetailsParams {
   id: string;
@@ -33,21 +36,35 @@ interface AddMemberModalProps {
 }
 
 export function GroupDetailsScreen() {
-  const route = useRoute();
+  const route = useRoute<any>();
+  const navigation = useNavigation();
+  const { user } = useAuth();
   const { id, name, icon, color, memberCount } =
     route.params as GroupDetailsParams;
-
-  const navigation = useNavigation();
   const { members, membersLoading, fetchMembers } = useGroupMembers(id);
 
   const [showMembersModal, setShowMembersModal] = useState(false);
-  const { user } = useAuth();
   const [showAddMemberModal, setShowAddMemberModal] = useState(false);
   const [addingMember, setAddingMember] = useState(false);
+  const [showSettingsModal, setShowSettingsModal] = useState(false);
 
+  // Find current user is admin of the group
+  const isAdmin = members.some(
+    (member) => member.id === user?.id && member.role === "admin"
+  );
+
+  // Initial data fetch
   useEffect(() => {
     fetchMembers();
   }, [id]);
+
+  if (membersLoading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#1a73e8" />
+      </View>
+    );
+  }
 
   const MembersModal = () => (
     <Modal
@@ -195,61 +212,58 @@ export function GroupDetailsScreen() {
         animationType="slide"
         onRequestClose={onClose}
       >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Add New Member</Text>
-              <TouchableOpacity onPress={onClose} style={styles.closeButton}>
-                <Icon name="close" size={24} color="#666" />
-              </TouchableOpacity>
-            </View>
+        <KeyboardAvoidingView
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
+          style={styles.modalContainer}
+        >
+          <View style={styles.modalOverlay}>
+            <View style={styles.modalContent}>
+              <View style={styles.modalHeader}>
+                <Text style={styles.modalTitle}>Add New Member</Text>
+                <TouchableOpacity onPress={onClose} style={styles.closeButton}>
+                  <Icon name="close" size={24} color="#666" />
+                </TouchableOpacity>
+              </View>
 
-            <View style={styles.inputContainer}>
-              <Text style={styles.inputLabel}>Member Email</Text>
-              <TextInput
-                style={styles.input}
-                placeholder="Enter email address"
-                value={email}
-                onChangeText={setEmail}
-                keyboardType="email-address"
-                autoCapitalize="none"
-                autoCorrect={false}
-              />
-            </View>
+              <View style={styles.inputContainer}>
+                <Text style={styles.inputLabel}>Member Email</Text>
+                <TextInput
+                  style={styles.input}
+                  placeholder="Enter email address"
+                  value={email}
+                  onChangeText={setEmail}
+                  keyboardType="email-address"
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                />
+              </View>
 
-            <View style={styles.modalButtons}>
-              <TouchableOpacity
-                style={[styles.button, styles.cancelButton]}
-                onPress={onClose}
-                disabled={loading}
-              >
-                <Text style={styles.cancelButtonText}>Cancel</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.button, styles.addButton]}
-                onPress={handleSubmit}
-                disabled={loading}
-              >
-                {loading ? (
-                  <ActivityIndicator color="#fff" size="small" />
-                ) : (
-                  <Text style={styles.addButtonText}>Add Member</Text>
-                )}
-              </TouchableOpacity>
+              <View style={styles.modalButtons}>
+                <TouchableOpacity
+                  style={[styles.button, styles.cancelButton]}
+                  onPress={onClose}
+                  disabled={loading}
+                >
+                  <Text style={styles.cancelButtonText}>Cancel</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.button, styles.addButton]}
+                  onPress={handleSubmit}
+                  disabled={loading}
+                >
+                  {loading ? (
+                    <ActivityIndicator color="#fff" size="small" />
+                  ) : (
+                    <Text style={styles.addButtonText}>Add Member</Text>
+                  )}
+                </TouchableOpacity>
+              </View>
             </View>
           </View>
-        </View>
+        </KeyboardAvoidingView>
       </Modal>
     );
   };
-
-  if (membersLoading) {
-    return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#1a73e8" />
-      </View>
-    );
-  }
 
   return (
     <SafeAreaView style={styles.container}>
@@ -263,11 +277,14 @@ export function GroupDetailsScreen() {
         </TouchableOpacity>
         <View style={styles.headerTitle}>
           <View style={[styles.groupIcon, { backgroundColor: color }]}>
-            <Icon name={icon} size={24} color="#fff" />
+            <Icon name={icon || "group"} size={24} color="#fff" />
           </View>
           <Text style={styles.groupName}>{name}</Text>
         </View>
-        <TouchableOpacity style={styles.moreButton}>
+        <TouchableOpacity
+          style={styles.moreButton}
+          onPress={() => setShowSettingsModal(true)}
+        >
           <Icon name="more-vert" size={24} color="#1a1a1a" />
         </TouchableOpacity>
       </View>
@@ -348,6 +365,16 @@ export function GroupDetailsScreen() {
         onClose={() => setShowAddMemberModal(false)}
         onAdd={handleAddMember}
         loading={addingMember}
+      />
+      <GroupSettingsModal
+        visible={showSettingsModal}
+        onClose={() => setShowSettingsModal(false)}
+        groupId={id}
+        groupName={name}
+        groupIcon={icon || "group"}
+        groupColor={color || "#1a73e8"}
+        isAdmin={isAdmin}
+        navigation={navigation}
       />
     </SafeAreaView>
   );
@@ -453,6 +480,9 @@ const styles = StyleSheet.create({
     color: "#666",
     textAlign: "center",
   },
+  modalContainer: {
+    flex: 1,
+  },
   modalOverlay: {
     flex: 1,
     backgroundColor: "rgba(0, 0, 0, 0.5)",
@@ -462,17 +492,13 @@ const styles = StyleSheet.create({
     backgroundColor: "#fff",
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
-    maxHeight: "80%",
-    paddingTop: 20,
+    padding: 20,
   },
   modalHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    paddingHorizontal: 20,
-    paddingBottom: 20,
-    borderBottomWidth: 1,
-    borderBottomColor: "#f0f0f0",
+    marginBottom: 20,
   },
   modalTitle: {
     fontSize: 20,
@@ -559,8 +585,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#fff",
   },
   inputContainer: {
-    marginBottom: 24,
-    paddingHorizontal: 20,
+    marginBottom: 20,
   },
   inputLabel: {
     fontSize: 16,
@@ -580,8 +605,8 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "flex-end",
     gap: 12,
-    paddingHorizontal: 20,
-    paddingBottom: 20,
+    marginTop: 20,
+    paddingBottom: Platform.OS === "ios" ? 20 : 0,
   },
   button: {
     paddingHorizontal: 24,
