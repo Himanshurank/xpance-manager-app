@@ -19,6 +19,7 @@ import { supabase } from "../lib/supabase";
 import Toaster from "../utils/toasterConfig";
 import { useGroupMembers } from "../hooks/useGroupMembers";
 import { GroupSettingsModal } from "../components/GroupSettingsModal";
+import { useGroups } from "../hooks/useGroups";
 
 interface GroupDetailsParams {
   id: string;

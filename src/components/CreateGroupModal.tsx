@@ -117,15 +117,9 @@ export function CreateGroupModal({
           color: selectedColor,
         };
 
-        console.log('Starting group update:', {
-          groupId: groupData.id,
-          updates
-        });
-
         const result = await updateGroup(groupData.id, updates);
-        
+
         if (result) {
-          console.log('Update successful:', result);
           onSuccess();
           onClose();
         }

@@ -45,7 +45,7 @@ const GroupList = (props: TProps) => {
                 name: group.name,
                 icon: group.icon,
                 color: group.color,
-                memberCount: group.member_count,
+                memberCount: group.member_count ?? 0,
               });
             }}
           >
