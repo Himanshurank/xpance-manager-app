@@ -1,0 +1,142 @@
+
+
+-- Categories for both personal and shared expenses
+create table public.expense_categories (
+  id uuid default uuid_generate_v4() primary key,
+  name text not null,
+  icon text,
+  color text,
+  type text check (type in ('personal', 'shared', 'both')) default 'both',
+  created_at timestamp with time zone default now()
+);
+
+-- Personal expenses table
+create table public.personal_expenses (
+  id uuid default uuid_generate_v4() primary key,
+  user_id uuid references auth.users not null,
+  amount decimal(12,2) not null,
+  category_id uuid references public.expense_categories,
+  description text,
+  date timestamp with time zone default now(),
+  created_at timestamp with time zone default now(),
+  updated_at timestamp with time zone default now()
+);
+
+-- Shared expenses table (connected to existing groups)
+create table public.shared_expenses (
+  id uuid default uuid_generate_v4() primary key,
+  group_id uuid references public.groups not null,
+  amount decimal(12,2) not null,
+  category_id uuid references public.expense_categories,
+  description text,
+  paid_by uuid references auth.users not null,
+  date timestamp with time zone default now(),
+  split_type text check (split_type in ('equal', 'percentage', 'custom')) default 'equal',
+  created_at timestamp with time zone default now(),
+  updated_at timestamp with time zone default now()
+);
+
+-- Who owes what for shared expenses
+create table public.expense_participants (
+  id uuid default uuid_generate_v4() primary key,
+  expense_id uuid references public.shared_expenses not null,
+  user_id uuid references auth.users not null,
+  share_amount decimal(12,2) not null,
+  share_percentage decimal(5,2),
+  is_paid boolean default false,
+  paid_at timestamp with time zone,
+  created_at timestamp with time zone default now(),
+  unique(expense_id, user_id)
+);
+
+-- RLS Policies for new tables
+
+-- Categories policies
+create policy "Anyone can view categories"
+  on public.expense_categories
+  for select
+  using (true);
+
+-- Personal expenses policies
+create policy "Users can manage their personal expenses"
+  on public.personal_expenses
+  for all
+  using (auth.uid() = user_id)
+  with check (auth.uid() = user_id);
+
+-- Shared expenses policies
+create policy "Group members can view expenses"
+  on public.shared_expenses
+  for select
+  using (
+    exists (
+      select 1 from public.group_members
+      where group_id = shared_expenses.group_id
+      and user_id = auth.uid()
+    )
+  );
+
+create policy "Group members can add expenses"
+  on public.shared_expenses
+  for insert
+  with check (
+    exists (
+      select 1 from public.group_members
+      where group_id = shared_expenses.group_id
+      and user_id = auth.uid()
+    )
+  );
+
+-- Expense participants policies
+create policy "Members can view expense shares"
+  on public.expense_participants
+  for select
+  using (
+    exists (
+      select 1 from public.shared_expenses se
+      join public.group_members gm on gm.group_id = se.group_id
+      where se.id = expense_id
+      and gm.user_id = auth.uid()
+    )
+  );
+
+-- Helper functions
+
+-- Calculate user's balance in a group
+create or replace function get_user_group_balance(p_user_id uuid, p_group_id uuid)
+returns decimal
+language plpgsql
+security definer
+as $$
+declare
+  v_balance decimal;
+begin
+  -- What user paid
+  select coalesce(sum(amount), 0) into v_balance
+  from shared_expenses
+  where group_id = p_group_id
+  and paid_by = p_user_id;
+
+  -- Minus what user owes
+  select v_balance - coalesce(sum(share_amount), 0)
+  into v_balance
+  from expense_participants ep
+  join shared_expenses se on se.id = ep.expense_id
+  where se.group_id = p_group_id
+  and ep.user_id = p_user_id;
+
+  return v_balance;
+end;
+$$;
+
+-- Insert default categories
+insert into public.expense_categories (name, icon, color, type) values
+  ('Food & Drinks', 'restaurant', '#FF9800', 'both'),
+  ('Shopping', 'shopping-cart', '#4CAF50', 'both'),
+  ('Transport', 'directions-car', '#2196F3', 'both'),
+  ('Bills', 'receipt', '#9C27B0', 'both'),
+  ('Entertainment', 'movie', '#E91E63', 'both'),
+  ('Travel', 'flight', '#3F51B5', 'both'),
+  ('Groceries', 'shopping-basket', '#8BC34A', 'both'),
+  ('Health', 'local-hospital', '#F44336', 'both'),
+  ('Other', 'more-horiz', '#607D8B', 'both');

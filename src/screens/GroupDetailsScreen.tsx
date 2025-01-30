@@ -21,6 +21,7 @@ import { useGroupMembers } from "../hooks/useGroupMembers";
 import { GroupSettingsModal } from "../components/GroupSettingsModal";
 import { NavigationProp } from "@react-navigation/native";
 import { GroupDetails } from "../types/types";
+import { AddExpenseModal } from "../components/AddExpenseModal";
 
 interface AddMemberModalProps {
   visible: boolean;
@@ -45,6 +46,7 @@ export function GroupDetailsScreen() {
   const [addingMember, setAddingMember] = useState(false);
   const [showSettingsModal, setShowSettingsModal] = useState(false);
   const [currentGroup, setCurrentGroup] = useState<GroupDetails>(route.params);
+  const [showAddExpenseModal, setShowAddExpenseModal] = useState(false);
 
   const isAdmin = members.find((m) => m.id === user?.id)?.role === "admin";
 
@@ -303,7 +305,10 @@ export function GroupDetailsScreen() {
 
       {/* Quick Actions */}
       <View style={styles.quickActions}>
-        <TouchableOpacity style={styles.actionButton}>
+        <TouchableOpacity
+          style={styles.actionButton}
+          onPress={() => setShowAddExpenseModal(true)}
+        >
           <View style={[styles.actionIcon, { backgroundColor: "#34A853" }]}>
             <Icon name="add" size={24} color="#fff" />
           </View>
@@ -387,6 +392,15 @@ export function GroupDetailsScreen() {
         isAdmin={isAdmin}
         navigation={navigation}
         onGroupUpdated={onGroupUpdated}
+      />
+      <AddExpenseModal
+        visible={showAddExpenseModal}
+        onClose={() => setShowAddExpenseModal(false)}
+        groupId={groupId}
+        members={members}
+        onSuccess={() => {
+          fetchMembers();
+        }}
       />
     </SafeAreaView>
   );
