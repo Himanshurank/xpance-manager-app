@@ -17,3 +17,11 @@ export interface GroupMember {
   role: "admin" | "member";
   joined_at: string;
 }
+
+export interface GroupDetails {
+  id: string;
+  name: string;
+  icon: string;
+  color: string;
+  memberCount: number;
+}

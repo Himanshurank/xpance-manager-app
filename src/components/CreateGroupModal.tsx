@@ -12,19 +12,15 @@ import {
 import Icon from "react-native-vector-icons/MaterialIcons";
 import { useGroups } from "../hooks/useGroups";
 import Toaster from "../utils/toasterConfig";
+import { GroupDetails } from "../types/types";
 
 interface CreateGroupModalProps {
   visible: boolean;
   onClose: () => void;
-  onSuccess: () => void;
+  onSuccess: (groupDetails: GroupDetails) => void;
   userId: string;
   mode?: "create" | "edit";
-  groupData?: {
-    id: string;
-    name: string;
-    icon: string;
-    color: string;
-  };
+  groupData?: GroupDetails;
 }
 
 const ICONS = [
@@ -119,8 +115,15 @@ export function CreateGroupModal({
 
         const result = await updateGroup(groupData.id, updates);
 
+        console.log(groupData, "groupData");
         if (result) {
-          onSuccess();
+          onSuccess({
+            id: groupData.id,
+            name: name.trim(),
+            icon: selectedIcon,
+            color: selectedColor,
+            memberCount: groupData.memberCount ?? 0,
+          });
           onClose();
         }
       } else {
@@ -137,7 +140,13 @@ export function CreateGroupModal({
             text1: "Success",
             text2: "Group created successfully",
           });
-          onSuccess();
+          onSuccess({
+            id: result.id,
+            name: name.trim(),
+            icon: selectedIcon,
+            color: selectedColor,
+            memberCount: groupData?.memberCount ?? 0,
+          });
           onClose();
         }
       }

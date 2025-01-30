@@ -12,27 +12,24 @@ import Icon from "react-native-vector-icons/MaterialIcons";
 import { useGroups } from "../hooks/useGroups";
 import { useAuth } from "../hooks/useAuth";
 import { CreateGroupModal } from "./CreateGroupModal";
+import { GroupDetails } from "../types/types";
 
 interface GroupSettingsModalProps {
   visible: boolean;
   onClose: () => void;
-  groupId: string;
-  groupName: string;
-  groupIcon: string;
-  groupColor: string;
+  groupDetails: GroupDetails;
   isAdmin: boolean;
   navigation: any;
+  onGroupUpdated: (updatedGroup: GroupDetails) => void;
 }
 
 export function GroupSettingsModal({
   visible,
   onClose,
-  groupId,
-  groupName,
-  groupIcon,
-  groupColor,
+  groupDetails,
   isAdmin,
   navigation,
+  onGroupUpdated,
 }: GroupSettingsModalProps) {
   const { deleteGroup } = useGroups(useAuth().user?.id || "");
   const [loading, setLoading] = useState(false);
@@ -42,7 +39,7 @@ export function GroupSettingsModal({
   const handleDeleteGroup = () => {
     Alert.alert(
       "Delete Group",
-      `Are you sure you want to delete "${groupName}"? This action cannot be undone.`,
+      `Are you sure you want to delete "${groupDetails.name}"? This action cannot be undone.`,
       [
         {
           text: "Cancel",
@@ -54,7 +51,7 @@ export function GroupSettingsModal({
           onPress: async () => {
             setLoading(true);
             try {
-              await deleteGroup(groupId);
+              await deleteGroup(groupDetails.id);
               onClose();
               navigation.goBack();
             } finally {
@@ -69,7 +66,7 @@ export function GroupSettingsModal({
   const handleLeaveGroup = () => {
     Alert.alert(
       "Leave Group",
-      `Are you sure you want to leave "${groupName}"?`,
+      `Are you sure you want to leave "${groupDetails.name}"?`,
       [
         {
           text: "Cancel",
@@ -186,18 +183,14 @@ export function GroupSettingsModal({
       <CreateGroupModal
         visible={showEditModal}
         onClose={() => setShowEditModal(false)}
-        onSuccess={() => {
+        onSuccess={(groupDetails: GroupDetails) => {
           setShowEditModal(false);
           onClose(); // Close both modals
+          onGroupUpdated(groupDetails);
         }}
         userId={user?.id || ""}
         mode="edit"
-        groupData={{
-          id: groupId,
-          name: groupName,
-          icon: groupIcon,
-          color: groupColor,
-        }}
+        groupData={groupDetails}
       />
     </>
   );

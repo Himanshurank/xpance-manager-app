@@ -19,16 +19,8 @@ import { supabase } from "../lib/supabase";
 import Toaster from "../utils/toasterConfig";
 import { useGroupMembers } from "../hooks/useGroupMembers";
 import { GroupSettingsModal } from "../components/GroupSettingsModal";
-import { useGroups } from "../hooks/useGroups";
 import { NavigationProp } from "@react-navigation/native";
-
-interface GroupDetailsParams {
-  id: string;
-  name: string;
-  icon: string;
-  color: string;
-  memberCount: number;
-}
+import { GroupDetails } from "../types/types";
 
 interface AddMemberModalProps {
   visible: boolean;
@@ -41,36 +33,37 @@ export function GroupDetailsScreen() {
   const route = useRoute<any>();
   const navigation = useNavigation<
     NavigationProp<{
-      GroupDetails: GroupDetailsParams;
+      GroupDetails: GroupDetails;
     }>
   >();
   const { user } = useAuth();
-  const { id: groupId } = route.params as { id: string };
-  const { groups } = useGroups(user?.id || "");
+  const { id: groupId, name, icon, color, memberCount } = route.params;
   const { members, membersLoading, fetchMembers } = useGroupMembers(groupId);
 
   const [showMembersModal, setShowMembersModal] = useState(false);
   const [showAddMemberModal, setShowAddMemberModal] = useState(false);
   const [addingMember, setAddingMember] = useState(false);
   const [showSettingsModal, setShowSettingsModal] = useState(false);
+  const [currentGroup, setCurrentGroup] = useState<GroupDetails>(route.params);
 
-  // Find current group from groups array
-  const currentGroup = groups.find((g) => g.id === groupId);
   const isAdmin = members.find((m) => m.id === user?.id)?.role === "admin";
 
-  // Update navigation params when group data changes
   useEffect(() => {
     if (currentGroup) {
       navigation.setParams({
+        id: groupId,
         name: currentGroup.name,
         icon: currentGroup.icon,
         color: currentGroup.color,
-        memberCount: currentGroup.member_count,
+        memberCount: currentGroup.memberCount,
       });
     }
   }, [currentGroup]);
 
-  // Initial data fetch
+  const onGroupUpdated = (updatedGroup: GroupDetails) => {
+    setCurrentGroup(updatedGroup);
+  };
+
   useEffect(() => {
     fetchMembers();
   }, [groupId]);
@@ -294,14 +287,11 @@ export function GroupDetailsScreen() {
         </TouchableOpacity>
         <View style={styles.headerTitle}>
           <View
-            style={[
-              styles.groupIcon,
-              { backgroundColor: currentGroup?.color || "#1a73e8" },
-            ]}
+            style={[styles.groupIcon, { backgroundColor: color || "#1a73e8" }]}
           >
-            <Icon name={currentGroup?.icon || "group"} size={24} color="#fff" />
+            <Icon name={icon || "group"} size={24} color="#fff" />
           </View>
-          <Text style={styles.groupName}>{currentGroup?.name || ""}</Text>
+          <Text style={styles.groupName}>{name || ""}</Text>
         </View>
         <TouchableOpacity
           style={styles.moreButton}
@@ -345,7 +335,7 @@ export function GroupDetailsScreen() {
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
               <Text style={styles.sectionTitle}>
-                Members ({currentGroup?.member_count || 0})
+                Members ({memberCount || 0})
               </Text>
               <TouchableOpacity onPress={() => setShowMembersModal(true)}>
                 <Text style={styles.seeAllText}>See All</Text>
@@ -393,12 +383,10 @@ export function GroupDetailsScreen() {
       <GroupSettingsModal
         visible={showSettingsModal}
         onClose={() => setShowSettingsModal(false)}
-        groupId={groupId}
-        groupName={currentGroup?.name || ""}
-        groupIcon={currentGroup?.icon || ""}
-        groupColor={currentGroup?.color || ""}
+        groupDetails={currentGroup}
         isAdmin={isAdmin}
         navigation={navigation}
+        onGroupUpdated={onGroupUpdated}
       />
     </SafeAreaView>
   );
