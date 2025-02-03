@@ -22,6 +22,10 @@ import { CreateGroupModal } from "../components/CreateGroupModal";
 import EmptyGroup from "../components/EmptyGroup";
 import GroupList from "../components/GroupList";
 import { useGroups } from "../hooks/useGroups";
+import { ExpenseList } from "../components/ExpenseList";
+import { useExpenses } from "../hooks/useExpenses";
+import { useIncome } from "../hooks/useIncome";
+import { AddIncomeModal } from "../components/AddIncomeModal";
 
 const { StatusBarManager } = NativeModules;
 const { width } = Dimensions.get("window");
@@ -43,10 +47,22 @@ type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 export function HomeScreen() {
   const { user, signOut } = useAuth();
   const { groups, groupsLoading, fetchGroups } = useGroups(user?.id || "");
+  const { expenses, expensesLoading, fetchExpenses } = useExpenses(
+    undefined,
+    user?.id
+  );
+  const {
+    income,
+    balance,
+    loading: incomeLoading,
+    updateIncome,
+    fetchIncome,
+  } = useIncome(user?.id);
 
   const [statusBarHeight, setStatusBarHeight] = React.useState(0);
   const [isSidebarOpen, setSidebarOpen] = useState(false);
   const [isCreateGroupModal, setIsCreateGroupModal] = useState(false);
+  const [showAddIncomeModal, setShowAddIncomeModal] = useState(false);
   const slideAnim = useRef(new Animated.Value(-width)).current;
   const navigation = useNavigation<NavigationProp>();
 
@@ -75,6 +91,13 @@ export function HomeScreen() {
   useEffect(() => {
     fetchGroups();
   }, [user]);
+
+  useEffect(() => {
+    if (user?.id) {
+      fetchExpenses();
+      fetchIncome();
+    }
+  }, [user?.id]);
 
   const menuItems = [
     { icon: "dashboard", label: "Dashboard" },
@@ -187,19 +210,41 @@ export function HomeScreen() {
           }}
         >
           <Text style={styles.balanceLabel}>Total Balance</Text>
-          <Text style={styles.balanceAmount}>₹24,500.00</Text>
+          <Text style={styles.balanceAmount}>
+            ₹ {balance < 0 ? "-" : ""}
+            {Math.abs(balance).toFixed(2)}
+            {balance < 0 && <Text style={styles.negativeIndicator}> DR</Text>}
+          </Text>
           <View style={styles.balanceStats}>
             <View style={styles.statItem}>
-              <Text style={styles.statLabel}>Income</Text>
-              <Text style={[styles.statAmount, styles.incomeText]}>
-                ₹32,500
-              </Text>
+              <View style={styles.incomeContainer}>
+                <View>
+                  <Text style={styles.statLabel}>Monthly Income</Text>
+                  <Text style={[styles.statAmount, styles.incomeText]}>
+                    ₹{income?.amount?.toFixed(2) || "0.00"}
+                  </Text>
+                </View>
+                <TouchableOpacity
+                  onPress={() => setShowAddIncomeModal(true)}
+                  style={styles.addButton}
+                >
+                  <Text style={styles.addButtonText}>+</Text>
+                </TouchableOpacity>
+              </View>
             </View>
             <View style={styles.statDivider} />
             <View style={styles.statItem}>
-              <Text style={styles.statLabel}>Expenses</Text>
-              <Text style={[styles.statAmount, styles.expenseText]}>
-                ₹8,000
+              <Text style={styles.statLabel}>Balance</Text>
+              <Text
+                style={[
+                  styles.statAmount,
+                  balance >= 0 ? styles.incomeText : styles.expenseText,
+                ]}
+              >
+                ₹{Math.abs(balance).toFixed(2)}
+                {balance < 0 && (
+                  <Text style={styles.negativeIndicator}> DR</Text>
+                )}
               </Text>
             </View>
           </View>
@@ -222,36 +267,24 @@ export function HomeScreen() {
           }}
         >
           <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Recent Transactions</Text>
+            <Text style={styles.sectionTitle}>Recent Expenses</Text>
             <TouchableOpacity>
               <Text style={styles.seeAllButton}>See All</Text>
             </TouchableOpacity>
           </View>
-
-          {[1, 2, 3].map((item) => (
-            <TouchableOpacity key={item} style={styles.transactionItem}>
-              <View style={styles.transactionIcon}>
-                <Text style={styles.transactionIconText}>🛒</Text>
-              </View>
-              <View style={styles.transactionDetails}>
-                <Text style={styles.transactionTitle}>Grocery Shopping</Text>
-                <Text style={styles.transactionDate}>Today, 2:30 PM</Text>
-              </View>
-              <Text style={styles.transactionAmount}>-₹2,500</Text>
-            </TouchableOpacity>
-          ))}
+          <ExpenseList expenses={expenses} isLoading={expensesLoading} />
         </PlatformView>
 
         <View style={styles.groupsSection}>
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>Your Groups</Text>
             <TouchableOpacity
-              style={styles.addButton}
+              style={styles.addGroupButton}
               onPress={() => {
                 setIsCreateGroupModal(true);
               }}
             >
-              <Text style={styles.addButtonText}>+ Create Group</Text>
+              <Text style={styles.addGroupButtonText}>+ Create Group</Text>
             </TouchableOpacity>
           </View>
 
@@ -274,6 +307,12 @@ export function HomeScreen() {
           )}
         </View>
       </ScrollView>
+
+      <AddIncomeModal
+        visible={showAddIncomeModal}
+        onClose={() => setShowAddIncomeModal(false)}
+        onSuccess={fetchIncome}
+      />
     </SafeAreaView>
   );
 }
@@ -446,10 +485,10 @@ const styles = StyleSheet.create({
     color: "#EA4335",
   },
   transactionsContainer: {
+    flex: 1,
     backgroundColor: "#fff",
-    borderRadius: 16,
+    borderRadius: 12,
     margin: 16,
-    marginTop: 0,
     padding: 16,
   },
   sectionHeader: {
@@ -459,7 +498,7 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   sectionTitle: {
-    fontSize: 17,
+    fontSize: 18,
     fontWeight: "600",
     color: "#1a1a1a",
   },
@@ -468,60 +507,59 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: "500",
   },
-  transactionItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingVertical: Platform.OS === "ios" ? 12 : 16,
-    borderBottomWidth: 1,
-    borderBottomColor: "#f0f0f0",
-    ...Platform.select({
-      android: {
-        paddingHorizontal: 4,
-      },
-    }),
-  },
-  transactionIcon: {
-    width: Platform.OS === "ios" ? 36 : 40,
-    height: Platform.OS === "ios" ? 36 : 40,
-    borderRadius: Platform.OS === "ios" ? 18 : 20,
-    backgroundColor: "#f5f5f5",
-    justifyContent: "center",
-    alignItems: "center",
-    marginRight: 12,
-  },
-  transactionIconText: {
-    fontSize: 18,
-  },
-  transactionDetails: {
-    flex: 1,
-  },
-  transactionTitle: {
-    fontSize: 15,
-    color: "#1a1a1a",
-    fontWeight: "500",
-  },
-  transactionDate: {
-    fontSize: 13,
-    color: "#666",
-    marginTop: 2,
-  },
-  transactionAmount: {
-    fontSize: 15,
-    fontWeight: "600",
-    color: "#EA4335",
-  },
   groupsSection: {
     padding: 16,
   },
   addButton: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: "#34a853",
+    marginLeft: 12,
+    justifyContent: "center",
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.15,
+    shadowRadius: 3,
+    elevation: 3,
+  },
+  addButtonText: {
+    color: "#fff",
+    fontSize: 18,
+    fontWeight: "600",
+    lineHeight: 20,
+    marginTop: -2, // Visual alignment
+  },
+  incomeContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    width: "100%",
+  },
+  addGroupButton: {
     backgroundColor: "#1a73e8",
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 20,
   },
-  addButtonText: {
+  addGroupButtonText: {
     color: "#fff",
     fontSize: 14,
     fontWeight: "500",
+  },
+  statsContainer: {
+    flexDirection: "row",
+    backgroundColor: "#fff",
+    borderRadius: 12,
+    margin: 16,
+    padding: 16,
+  },
+  negativeIndicator: {
+    fontSize: 12,
+    color: "#EA4335",
   },
 });

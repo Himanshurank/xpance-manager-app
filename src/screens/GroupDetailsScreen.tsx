@@ -20,8 +20,10 @@ import Toaster from "../utils/toasterConfig";
 import { useGroupMembers } from "../hooks/useGroupMembers";
 import { GroupSettingsModal } from "../components/GroupSettingsModal";
 import { NavigationProp } from "@react-navigation/native";
-import { GroupDetails } from "../types/types";
+import { Expense, GroupDetails } from "../types/types";
 import { AddExpenseModal } from "../components/AddExpenseModal";
+import { ExpenseList } from "../components/ExpenseList";
+import { useExpenses } from "../hooks/useExpenses";
 
 interface AddMemberModalProps {
   visible: boolean;
@@ -40,6 +42,7 @@ export function GroupDetailsScreen() {
   const { user } = useAuth();
   const { id: groupId, name, icon, color, memberCount } = route.params;
   const { members, membersLoading, fetchMembers } = useGroupMembers(groupId);
+  const { expenses, expensesLoading, fetchExpenses } = useExpenses(groupId);
 
   const [showMembersModal, setShowMembersModal] = useState(false);
   const [showAddMemberModal, setShowAddMemberModal] = useState(false);
@@ -68,6 +71,7 @@ export function GroupDetailsScreen() {
 
   useEffect(() => {
     fetchMembers();
+    fetchExpenses();
   }, [groupId]);
 
   if (membersLoading) {
@@ -360,21 +364,12 @@ export function GroupDetailsScreen() {
           </View>
         )}
 
-        {/* Recent Expenses Section */}
+        {/* All Expenses Section */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Recent Expenses</Text>
-            <TouchableOpacity>
-              <Text style={styles.seeAllText}>See All</Text>
-            </TouchableOpacity>
+            <Text style={styles.sectionTitle}>All Expenses</Text>
           </View>
-          <View style={styles.emptyState}>
-            <Icon name="receipt" size={48} color="#ccc" />
-            <Text style={styles.emptyStateText}>No expenses yet</Text>
-            <Text style={styles.emptyStateSubText}>
-              Add your first expense to start tracking
-            </Text>
-          </View>
+          <ExpenseList expenses={expenses} isLoading={expensesLoading} />
         </View>
       </ScrollView>
 
@@ -400,6 +395,7 @@ export function GroupDetailsScreen() {
         members={members}
         onSuccess={() => {
           fetchMembers();
+          fetchExpenses();
         }}
       />
     </SafeAreaView>
@@ -470,9 +466,11 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   section: {
+    marginTop: 20,
+    backgroundColor: "#fff",
+    borderRadius: 12,
     padding: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: "#f0f0f0",
+    flex: 1,
   },
   sectionHeader: {
     flexDirection: "row",
@@ -481,7 +479,7 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   sectionTitle: {
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: "600",
     color: "#1a1a1a",
   },

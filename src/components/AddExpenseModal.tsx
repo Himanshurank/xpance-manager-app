@@ -16,12 +16,19 @@ import { supabase } from "../lib/supabase";
 import Toaster from "../utils/toasterConfig";
 import { useAuth } from "../hooks/useAuth";
 
+interface Member {
+  id: string;
+  email: string;
+  name: string;
+  role: "admin" | "member";
+}
+
 interface AddExpenseModalProps {
   visible: boolean;
   onClose: () => void;
   groupId: string;
   onSuccess?: () => void;
-  members: any[];
+  members: Member[];
 }
 
 export function AddExpenseModal({
@@ -89,13 +96,13 @@ export function AddExpenseModal({
 
       if (expenseError) throw expenseError;
 
-      // 2. Create expense participants
+      // 2. Create expense participants with correct member IDs
       const shareAmount =
-        splitType === "equal" ? parseFloat(amount) / members.length : 0; // Handle other split types as needed
+        splitType === "equal" ? parseFloat(amount) / members.length : 0;
 
       const participantsData = members.map((member) => ({
         expense_id: expense.id,
-        user_id: member.user_id,
+        user_id: member.id,
         share_amount: shareAmount,
         share_percentage: splitType === "equal" ? 100 / members.length : null,
       }));

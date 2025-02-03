@@ -25,3 +25,18 @@ export interface GroupDetails {
   color: string;
   memberCount: number;
 }
+
+export interface Expense {
+  id: string;
+  description: string;
+  amount: number;
+  category: {
+    name: string;
+    icon: string;
+    color: string;
+  };
+  paid_by: {
+    name: string;
+  };
+  created_at: string;
+}
