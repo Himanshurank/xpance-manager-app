@@ -16,13 +16,32 @@ interface ExpenseResponse {
   };
 }
 
+// Add interface for personal expense response
+interface PersonalExpenseResponse {
+  id: string;
+  description: string;
+  amount: number;
+  created_at: string;
+  user_id: string;
+  category: {
+    name: string;
+    icon: string;
+    color: string;
+  };
+}
+
 export const useExpenses = (groupId?: string, userId?: string) => {
-  const [expenses, setExpenses] = useState<Expense[]>([]);
+  const [allExpenses, setAllExpenses] = useState<Expense[]>([]);
+  const [sharedExpenses, setSharedExpenses] = useState<Expense[]>([]);
   const [expensesLoading, setExpensesLoading] = useState(true);
 
   const fetchExpenses = async () => {
     try {
-      let query = supabase
+      setExpensesLoading(true);
+      let personalData: any[] = [];
+
+      // Modify shared expenses query based on groupId
+      let { data: sharedExpenses, error: sharedError } = (await supabase
         .from("shared_expenses")
         .select(
           `
@@ -38,24 +57,43 @@ export const useExpenses = (groupId?: string, userId?: string) => {
           )
         `
         )
-        .order("created_at", { ascending: false });
 
-      // If groupId is provided, filter by group
-      if (groupId) {
-        query = query.eq("group_id", groupId);
+        .eq(groupId ? "group_id" : "paid_by", groupId || userId)
+        .order("created_at", { ascending: false })) as {
+        data: ExpenseResponse[] | null;
+        error: any;
+      };
+
+      if (!groupId && userId) {
+        const { data, error: personalError } = (await supabase
+          .from("personal_expenses")
+          .select(
+            `
+            id,
+            description,
+            amount,
+            created_at,
+            user_id,
+            category:expense_categories!inner (
+              name,
+              icon,
+              color
+            )
+          `
+          )
+          .eq("user_id", userId)
+          .order("created_at", { ascending: false })) as {
+          data: PersonalExpenseResponse[] | null;
+          error: any;
+        };
+
+        if (personalError) throw personalError;
+        personalData = data || [];
       }
-      // If userId is provided, filter by user's expenses
-      if (userId) {
-        query = query.eq("paid_by", userId);
-      }
 
-      const { data, error } = await query.returns<ExpenseResponse[]>();
+      if (sharedError) throw sharedError;
 
-      if (error) throw error;
-
-      const userIds = [
-        ...new Set(data?.map((expense) => expense.paid_by) || []),
-      ];
+      const userIds = [...new Set(sharedExpenses?.map((e) => e.paid_by) || [])];
       const { data: userData, error: userError } = await supabase
         .from("users")
         .select("id, name")
@@ -67,16 +105,39 @@ export const useExpenses = (groupId?: string, userId?: string) => {
         userData?.map((user) => [user.id, { name: user.name }]) || []
       );
 
-      const transformedData = data?.map((expense) => ({
-        id: expense.id,
-        description: expense.description,
-        amount: expense.amount,
-        created_at: expense.created_at,
-        category: expense.category,
-        paid_by: userMap[expense.paid_by] || { name: "Unknown" },
-      }));
+      const transformedShared = sharedExpenses?.map(
+        (expense): Expense => ({
+          id: expense.id,
+          description: expense.description,
+          amount: expense.amount,
+          created_at: expense.created_at,
+          category: expense.category,
+          paid_by: userMap[expense.paid_by] || { name: "Unknown" },
+          paidById: expense.paid_by,
+        })
+      );
 
-      setExpenses(transformedData || []);
+      const transformedPersonal = personalData?.map(
+        (expense: PersonalExpenseResponse): Expense => ({
+          id: expense.id,
+          description: expense.description,
+          amount: expense.amount,
+          created_at: expense.created_at,
+          category: expense.category,
+          paid_by: { name: "You" },
+        })
+      );
+
+      const allExpenses = [
+        ...(transformedShared || []),
+        ...(transformedPersonal || []),
+      ].sort(
+        (a, b) =>
+          new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+      );
+
+      setAllExpenses(allExpenses);
+      setSharedExpenses(transformedShared || []);
     } catch (error) {
       console.error("Error fetching expenses:", error);
       Toaster({
@@ -89,5 +150,5 @@ export const useExpenses = (groupId?: string, userId?: string) => {
     }
   };
 
-  return { expenses, expensesLoading, fetchExpenses };
+  return { allExpenses, sharedExpenses, expensesLoading, fetchExpenses };
 };

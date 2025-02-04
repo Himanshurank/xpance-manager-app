@@ -26,6 +26,7 @@ import { ExpenseList } from "../components/ExpenseList";
 import { useExpenses } from "../hooks/useExpenses";
 import { useIncome } from "../hooks/useIncome";
 import { AddIncomeModal } from "../components/AddIncomeModal";
+import { AddExpenseModal } from "../components/AddExpenseModal";
 
 const { StatusBarManager } = NativeModules;
 const { width } = Dimensions.get("window");
@@ -47,7 +48,7 @@ type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 export function HomeScreen() {
   const { user, signOut } = useAuth();
   const { groups, groupsLoading, fetchGroups } = useGroups(user?.id || "");
-  const { expenses, expensesLoading, fetchExpenses } = useExpenses(
+  const { allExpenses, expensesLoading, fetchExpenses } = useExpenses(
     undefined,
     user?.id
   );
@@ -55,7 +56,6 @@ export function HomeScreen() {
     income,
     balance,
     loading: incomeLoading,
-    updateIncome,
     fetchIncome,
   } = useIncome(user?.id);
 
@@ -63,6 +63,7 @@ export function HomeScreen() {
   const [isSidebarOpen, setSidebarOpen] = useState(false);
   const [isCreateGroupModal, setIsCreateGroupModal] = useState(false);
   const [showAddIncomeModal, setShowAddIncomeModal] = useState(false);
+  const [showAddExpenseModal, setShowAddExpenseModal] = useState(false);
   const slideAnim = useRef(new Animated.Value(-width)).current;
   const navigation = useNavigation<NavigationProp>();
 
@@ -234,19 +235,36 @@ export function HomeScreen() {
             </View>
             <View style={styles.statDivider} />
             <View style={styles.statItem}>
-              <Text style={styles.statLabel}>Balance</Text>
-              <Text
-                style={[
-                  styles.statAmount,
-                  balance >= 0 ? styles.incomeText : styles.expenseText,
-                ]}
-              >
-                ₹{Math.abs(balance).toFixed(2)}
-                {balance < 0 && (
-                  <Text style={styles.negativeIndicator}> DR</Text>
-                )}
-              </Text>
+              <View style={styles.incomeContainer}>
+                <View>
+                  <Text style={styles.statLabel}>Balance</Text>
+                  <Text
+                    style={[
+                      styles.statAmount,
+                      balance >= 0 ? styles.incomeText : styles.expenseText,
+                    ]}
+                  >
+                    ₹{Math.abs(balance).toFixed(2)}
+                    {balance < 0 && (
+                      <Text style={styles.negativeIndicator}> DR</Text>
+                    )}
+                  </Text>
+                </View>
+              </View>
             </View>
+          </View>
+
+          <View style={styles.actionContainer}>
+            <TouchableOpacity
+              style={styles.expenseActionButton}
+              onPress={() => setShowAddExpenseModal(true)}
+            >
+              <View style={styles.expenseIconContainer}>
+                <Icon name="receipt-long" size={20} color="#EA4335" />
+              </View>
+              <Text style={styles.expenseActionText}>Add Expense</Text>
+              <Icon name="chevron-right" size={20} color="#666" />
+            </TouchableOpacity>
           </View>
         </PlatformView>
 
@@ -272,7 +290,7 @@ export function HomeScreen() {
               <Text style={styles.seeAllButton}>See All</Text>
             </TouchableOpacity>
           </View>
-          <ExpenseList expenses={expenses} isLoading={expensesLoading} />
+          <ExpenseList expenses={allExpenses} isLoading={expensesLoading} />
         </PlatformView>
 
         <View style={styles.groupsSection}>
@@ -312,6 +330,15 @@ export function HomeScreen() {
         visible={showAddIncomeModal}
         onClose={() => setShowAddIncomeModal(false)}
         onSuccess={fetchIncome}
+      />
+
+      <AddExpenseModal
+        visible={showAddExpenseModal}
+        onClose={() => setShowAddExpenseModal(false)}
+        onSuccess={() => {
+          fetchExpenses();
+          fetchIncome();
+        }}
       />
     </SafeAreaView>
   );
@@ -561,5 +588,34 @@ const styles = StyleSheet.create({
   negativeIndicator: {
     fontSize: 12,
     color: "#EA4335",
+  },
+  expenseButton: {
+    backgroundColor: "#EA4335", // Red color for expense button
+  },
+  actionContainer: {
+    marginTop: 16,
+    paddingTop: 16,
+    borderTopWidth: 1,
+    borderTopColor: "#f0f0f0",
+  },
+  expenseActionButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 8,
+  },
+  expenseIconContainer: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: "#fee8e7",
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: 12,
+  },
+  expenseActionText: {
+    flex: 1,
+    fontSize: 15,
+    color: "#1a1a1a",
+    fontWeight: "500",
   },
 });

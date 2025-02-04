@@ -23,12 +23,21 @@ interface Member {
   role: "admin" | "member";
 }
 
+interface ExpenseData {
+  amount: number;
+  category_id: string;
+  description: string;
+  paid_by: string | undefined;
+  group_id?: string;
+  split_type?: "equal" | "percentage" | "custom";
+}
+
 interface AddExpenseModalProps {
   visible: boolean;
   onClose: () => void;
-  groupId: string;
+  groupId?: string;
   onSuccess?: () => void;
-  members: Member[];
+  members?: Member[];
 }
 
 export function AddExpenseModal({
@@ -78,40 +87,58 @@ export function AddExpenseModal({
 
     setLoading(true);
     try {
-      // 1. Create the expense
-      const { data: expense, error: expenseError } = await supabase
-        .from("shared_expenses")
-        .insert([
-          {
-            group_id: groupId,
-            amount: parseFloat(amount),
-            category_id: selectedCategory,
-            description,
-            paid_by: user?.id,
-            split_type: splitType,
-          },
-        ])
-        .select()
-        .single();
+      // If no groupId, it's a personal expense
+      if (!groupId) {
+        const { error: personalExpenseError } = await supabase
+          .from("personal_expenses")
+          .insert([
+            {
+              amount: parseFloat(amount),
+              category_id: selectedCategory,
+              description,
+              user_id: user?.id,
+            },
+          ]);
 
-      if (expenseError) throw expenseError;
+        if (personalExpenseError) throw personalExpenseError;
+      } else {
+        // Group expense logic
+        const expenseData: ExpenseData = {
+          amount: parseFloat(amount),
+          category_id: selectedCategory,
+          description,
+          paid_by: user?.id,
+          group_id: groupId,
+          split_type: splitType,
+        };
 
-      // 2. Create expense participants with correct member IDs
-      const shareAmount =
-        splitType === "equal" ? parseFloat(amount) / members.length : 0;
+        const { data: expense, error: expenseError } = await supabase
+          .from("shared_expenses")
+          .insert([expenseData])
+          .select()
+          .single();
 
-      const participantsData = members.map((member) => ({
-        expense_id: expense.id,
-        user_id: member.id,
-        share_amount: shareAmount,
-        share_percentage: splitType === "equal" ? 100 / members.length : null,
-      }));
+        if (expenseError) throw expenseError;
 
-      const { error: participantsError } = await supabase
-        .from("expense_participants")
-        .insert(participantsData);
+        // Handle group expense participants
+        if (members) {
+          const shareAmount =
+            splitType === "equal" ? parseFloat(amount) / members.length : 0;
+          const participantsData = members.map((member) => ({
+            expense_id: expense.id,
+            user_id: member.id,
+            share_amount: shareAmount,
+            share_percentage:
+              splitType === "equal" ? 100 / members.length : null,
+          }));
 
-      if (participantsError) throw participantsError;
+          const { error: participantsError } = await supabase
+            .from("expense_participants")
+            .insert(participantsData);
+
+          if (participantsError) throw participantsError;
+        }
+      }
 
       Toaster({
         type: "success",

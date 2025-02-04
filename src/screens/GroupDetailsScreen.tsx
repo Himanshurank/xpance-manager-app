@@ -42,7 +42,8 @@ export function GroupDetailsScreen() {
   const { user } = useAuth();
   const { id: groupId, name, icon, color, memberCount } = route.params;
   const { members, membersLoading, fetchMembers } = useGroupMembers(groupId);
-  const { expenses, expensesLoading, fetchExpenses } = useExpenses(groupId);
+  const { sharedExpenses, expensesLoading, fetchExpenses } =
+    useExpenses(groupId);
 
   const [showMembersModal, setShowMembersModal] = useState(false);
   const [showAddMemberModal, setShowAddMemberModal] = useState(false);
@@ -338,7 +339,7 @@ export function GroupDetailsScreen() {
       </View>
 
       {/* Content */}
-      <ScrollView style={styles.content}>
+      <View style={styles.content}>
         {/* Members Section */}
         {!membersLoading && (
           <View style={styles.section}>
@@ -350,7 +351,6 @@ export function GroupDetailsScreen() {
                 <Text style={styles.seeAllText}>See All</Text>
               </TouchableOpacity>
             </View>
-            {/* Show first 3 members in the preview */}
             {members.slice(0, 3).map((member) => (
               <View key={member.id} style={styles.memberPreview}>
                 <View style={styles.memberAvatar}>
@@ -364,14 +364,51 @@ export function GroupDetailsScreen() {
           </View>
         )}
 
-        {/* All Expenses Section */}
+        {/* Expense Summary Section */}
         <View style={styles.section}>
+          <View style={styles.expenseSummary}>
+            <View style={styles.summaryItem}>
+              <Text style={styles.summaryLabel}>Total Expenses</Text>
+              <Text style={styles.summaryAmount}>
+                ₹
+                {sharedExpenses
+                  .map((exp) => exp.amount)
+                  .reduce((a, b) => a + b, 0)
+                  .toFixed(2)}
+              </Text>
+            </View>
+            <View style={styles.summaryDivider} />
+            <View style={styles.summaryItem}>
+              <Text style={styles.summaryLabel}>Your Expenses</Text>
+              <Text style={styles.summaryAmount}>
+                ₹
+                {sharedExpenses
+                  .reduce(
+                    (sum, exp) =>
+                      exp.paidById === user?.id ? sum + exp.amount : sum,
+                    0
+                  )
+                  .toFixed(2)}
+              </Text>
+            </View>
+          </View>
+        </View>
+
+        {/* All Expenses Section */}
+        <View style={[styles.section, styles.expensesSection]}>
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>All Expenses</Text>
+            <TouchableOpacity
+              style={styles.addExpenseButton}
+              onPress={() => setShowAddExpenseModal(true)}
+            >
+              <Icon name="add" size={20} color="#fff" />
+              <Text style={styles.addExpenseText}>Add Expense</Text>
+            </TouchableOpacity>
           </View>
-          <ExpenseList expenses={expenses} isLoading={expensesLoading} />
+          <ExpenseList expenses={sharedExpenses} isLoading={expensesLoading} />
         </View>
-      </ScrollView>
+      </View>
 
       <MembersModal />
       <AddMemberModal
@@ -464,13 +501,12 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
+    backgroundColor: "#f5f5f5",
   },
   section: {
-    marginTop: 20,
     backgroundColor: "#fff",
-    borderRadius: 12,
+    marginBottom: 8,
     padding: 16,
-    flex: 1,
   },
   sectionHeader: {
     flexDirection: "row",
@@ -654,5 +690,49 @@ const styles = StyleSheet.create({
     color: "#fff",
     fontSize: 16,
     fontWeight: "600",
+  },
+  expenseSummary: {
+    flexDirection: "row",
+    backgroundColor: "#f8f9fa",
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 16,
+  },
+  summaryItem: {
+    flex: 1,
+    alignItems: "center",
+  },
+  summaryLabel: {
+    fontSize: 14,
+    color: "#666",
+    marginBottom: 4,
+  },
+  summaryAmount: {
+    fontSize: 20,
+    fontWeight: "600",
+    color: "#1a1a1a",
+  },
+  summaryDivider: {
+    width: 1,
+    backgroundColor: "#e0e0e0",
+    marginHorizontal: 16,
+  },
+  expensesSection: {
+    flex: 1,
+    marginBottom: 0,
+  },
+  addExpenseButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#1a73e8",
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
+  },
+  addExpenseText: {
+    color: "#fff",
+    marginLeft: 4,
+    fontSize: 14,
+    fontWeight: "500",
   },
 });

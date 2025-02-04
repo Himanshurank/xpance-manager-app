@@ -45,7 +45,7 @@ export const useIncome = (userId?: string) => {
       const currentIncome = incomeData?.amount || 0;
 
       setIncome(incomeData);
-      setBalance(currentIncome - totalExpenses);
+      await calculateBalance(currentIncome);
     } catch (error) {
       console.error("Error fetching income:", error);
       Toaster({
@@ -55,6 +55,39 @@ export const useIncome = (userId?: string) => {
       });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const calculateBalance = async (income: number) => {
+    try {
+      // Get shared expenses
+      const { data: sharedExpenses, error: sharedError } = await supabase
+        .from("shared_expenses")
+        .select("amount")
+        .eq("paid_by", userId);
+
+      // Get personal expenses
+      const { data: personalExpenses, error: personalError } = await supabase
+        .from("personal_expenses")
+        .select("amount")
+        .eq("user_id", userId);
+
+      if (sharedError) throw sharedError;
+      if (personalError) throw personalError;
+
+      const totalSharedExpenses = (sharedExpenses || []).reduce(
+        (sum, exp) => sum + exp.amount,
+        0
+      );
+
+      const totalPersonalExpenses = (personalExpenses || []).reduce(
+        (sum, exp) => sum + exp.amount,
+        0
+      );
+
+      setBalance(income - totalSharedExpenses - totalPersonalExpenses);
+    } catch (error) {
+      console.error("Error calculating balance:", error);
     }
   };
 

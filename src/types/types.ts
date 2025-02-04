@@ -39,4 +39,5 @@ export interface Expense {
     name: string;
   };
   created_at: string;
+  paidById?: string;
 }
