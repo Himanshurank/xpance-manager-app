@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   ScrollView,
   Dimensions,
+  Share,
 } from "react-native";
 import Icon from "react-native-vector-icons/MaterialIcons";
 import { useNavigation } from "@react-navigation/native";
@@ -23,6 +24,7 @@ import {
 import { ETimeRange } from "../types/Enums";
 import { Expense } from "../types/types";
 import Toaster from "../utils/toasterConfig";
+import { generateAnalyticsReport } from "../utils/pdfGenerator";
 
 const { width } = Dimensions.get("window");
 
@@ -106,13 +108,46 @@ export function AnalyticsScreen() {
         <View style={styles.downloadSection}>
           <TouchableOpacity
             style={styles.downloadButton}
-            onPress={() => {
-              // Handle download functionality
-              Toaster({
-                type: "info",
-                text1: "Coming Soon",
-                text2: "This feature will be available soon!",
-              });
+            onPress={async () => {
+              try {
+                if (filteredData.length === 0) {
+                  Toaster({
+                    type: "info",
+                    text1: "No Data",
+                    text2: `No expenses found for ${selectedRange} period`,
+                  });
+                  return;
+                }
+
+                const filePath = await generateAnalyticsReport(
+                  selectedRange,
+                  totalSpending,
+                  averageSpending,
+                  categoryData,
+                  filteredData,
+                  user?.user_metadata?.name || "User",
+                  user?.email || ""
+                );
+
+                if (filePath) {
+                  await Share.share({
+                    url: `file://${filePath}`,
+                    title: "Expense Report",
+                  });
+
+                  Toaster({
+                    type: "success",
+                    text1: "Success",
+                    text2: "Report generated successfully!",
+                  });
+                }
+              } catch (error) {
+                Toaster({
+                  type: "error",
+                  text1: "Error",
+                  text2: "Failed to generate report",
+                });
+              }
             }}
           >
             <Icon
