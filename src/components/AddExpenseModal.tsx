@@ -134,112 +134,110 @@ export function AddExpenseModal({
       animationType="slide"
       onRequestClose={onClose}
     >
-      <KeyboardAvoidingView
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
-        style={styles.modalContainer}
+      <TouchableOpacity
+        style={styles.modalOverlay}
+        activeOpacity={1}
+        onPress={onClose}
       >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Add Expense</Text>
-              <TouchableOpacity onPress={onClose} style={styles.closeButton}>
-                <Icon name="close" size={24} color="#666" />
-              </TouchableOpacity>
+        <TouchableOpacity
+          activeOpacity={1}
+          style={styles.modalContent}
+          onPress={(e) => e.stopPropagation()}
+        >
+          <View style={styles.modalHeader}>
+            <Text style={styles.modalTitle}>Add Expense</Text>
+            <TouchableOpacity onPress={onClose} style={styles.closeButton}>
+              <Icon name="close" size={24} color="#666" />
+            </TouchableOpacity>
+          </View>
+
+          <ScrollView style={styles.form}>
+            {/* Amount Input */}
+            <View style={styles.inputContainer}>
+              <Text style={styles.label}>Amount*</Text>
+              <TextInput
+                style={styles.input}
+                value={amount}
+                onChangeText={setAmount}
+                keyboardType="decimal-pad"
+                placeholder="Enter amount"
+              />
             </View>
 
-            <ScrollView style={styles.form}>
-              {/* Amount Input */}
-              <View style={styles.inputContainer}>
-                <Text style={styles.label}>Amount*</Text>
-                <TextInput
-                  style={styles.input}
-                  value={amount}
-                  onChangeText={setAmount}
-                  keyboardType="decimal-pad"
-                  placeholder="Enter amount"
-                />
-              </View>
+            {/* Description Input */}
+            <View style={styles.inputContainer}>
+              <Text style={styles.label}>Description*</Text>
+              <TextInput
+                style={styles.input}
+                value={description}
+                onChangeText={setDescription}
+                placeholder="What's this expense for?"
+              />
+            </View>
 
-              {/* Description Input */}
-              <View style={styles.inputContainer}>
-                <Text style={styles.label}>Description*</Text>
-                <TextInput
-                  style={styles.input}
-                  value={description}
-                  onChangeText={setDescription}
-                  placeholder="What's this expense for?"
-                />
-              </View>
+            {/* Category Selection */}
+            <Text style={styles.label}>Category*</Text>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              style={styles.categoriesContainer}
+            >
+              {categories.map((category) => (
+                <TouchableOpacity
+                  key={category.id}
+                  style={[
+                    styles.categoryItem,
+                    selectedCategory === category.id && styles.selectedCategory,
+                  ]}
+                  onPress={() => setSelectedCategory(category.id)}
+                >
+                  <Icon name={category.icon} size={24} color={category.color} />
+                  <Text style={styles.categoryText}>{category.name}</Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
 
-              {/* Category Selection */}
-              <Text style={styles.label}>Category*</Text>
-              <ScrollView
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                style={styles.categoriesContainer}
-              >
-                {categories.map((category) => (
+            {/* Split Type Selection */}
+            <View style={styles.inputContainer}>
+              <Text style={styles.label}>Split Type</Text>
+              <View style={styles.splitTypeContainer}>
+                {["equal", "percentage", "custom"].map((type) => (
                   <TouchableOpacity
-                    key={category.id}
+                    key={type}
                     style={[
-                      styles.categoryItem,
-                      selectedCategory === category.id &&
-                        styles.selectedCategory,
+                      styles.splitTypeButton,
+                      splitType === type && styles.selectedSplitType,
                     ]}
-                    onPress={() => setSelectedCategory(category.id)}
+                    onPress={() => setSplitType(type as any)}
                   >
-                    <Icon
-                      name={category.icon}
-                      size={24}
-                      color={category.color}
-                    />
-                    <Text style={styles.categoryText}>{category.name}</Text>
+                    <Text
+                      style={[
+                        styles.splitTypeText,
+                        splitType === type && styles.selectedSplitTypeText,
+                      ]}
+                    >
+                      {type.charAt(0).toUpperCase() + type.slice(1)}
+                    </Text>
                   </TouchableOpacity>
                 ))}
-              </ScrollView>
-
-              {/* Split Type Selection */}
-              <View style={styles.inputContainer}>
-                <Text style={styles.label}>Split Type</Text>
-                <View style={styles.splitTypeContainer}>
-                  {["equal", "percentage", "custom"].map((type) => (
-                    <TouchableOpacity
-                      key={type}
-                      style={[
-                        styles.splitTypeButton,
-                        splitType === type && styles.selectedSplitType,
-                      ]}
-                      onPress={() => setSplitType(type as any)}
-                    >
-                      <Text
-                        style={[
-                          styles.splitTypeText,
-                          splitType === type && styles.selectedSplitTypeText,
-                        ]}
-                      >
-                        {type.charAt(0).toUpperCase() + type.slice(1)}
-                      </Text>
-                    </TouchableOpacity>
-                  ))}
-                </View>
               </View>
+            </View>
 
-              {/* Submit Button */}
-              <TouchableOpacity
-                style={styles.submitButton}
-                onPress={handleSubmit}
-                disabled={loading}
-              >
-                {loading ? (
-                  <ActivityIndicator color="#fff" size="small" />
-                ) : (
-                  <Text style={styles.submitButtonText}>Add Expense</Text>
-                )}
-              </TouchableOpacity>
-            </ScrollView>
-          </View>
-        </View>
-      </KeyboardAvoidingView>
+            {/* Submit Button */}
+            <TouchableOpacity
+              style={styles.submitButton}
+              onPress={handleSubmit}
+              disabled={loading}
+            >
+              {loading ? (
+                <ActivityIndicator color="#fff" size="small" />
+              ) : (
+                <Text style={styles.submitButtonText}>Add Expense</Text>
+              )}
+            </TouchableOpacity>
+          </ScrollView>
+        </TouchableOpacity>
+      </TouchableOpacity>
     </Modal>
   );
 }

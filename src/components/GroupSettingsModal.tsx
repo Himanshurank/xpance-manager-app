@@ -93,8 +93,16 @@ export function GroupSettingsModal({
         animationType="slide"
         onRequestClose={onClose}
       >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
+        <TouchableOpacity
+          style={styles.modalOverlay}
+          activeOpacity={1}
+          onPress={onClose}
+        >
+          <TouchableOpacity
+            activeOpacity={1}
+            style={styles.modalContent}
+            onPress={(e) => e.stopPropagation()}
+          >
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>Group Settings</Text>
               <TouchableOpacity onPress={onClose} style={styles.closeButton}>
@@ -176,8 +184,8 @@ export function GroupSettingsModal({
                 </TouchableOpacity>
               )}
             </ScrollView>
-          </View>
-        </View>
+          </TouchableOpacity>
+        </TouchableOpacity>
       </Modal>
 
       <CreateGroupModal

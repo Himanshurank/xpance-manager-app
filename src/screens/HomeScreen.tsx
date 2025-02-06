@@ -147,7 +147,7 @@ export function HomeScreen() {
       <Modal
         visible={isSidebarOpen}
         transparent={true}
-        animationType="none"
+        animationType="fade"
         onRequestClose={() => toggleSidebar(false)}
       >
         <TouchableOpacity
@@ -155,13 +155,10 @@ export function HomeScreen() {
           activeOpacity={1}
           onPress={() => toggleSidebar(false)}
         >
-          <Animated.View
-            style={[
-              styles.sidebar,
-              {
-                transform: [{ translateX: slideAnim }],
-              },
-            ]}
+          <TouchableOpacity
+            activeOpacity={1}
+            style={styles.sidebar}
+            onPress={(e) => e.stopPropagation()}
           >
             <View style={styles.sidebarHeader}>
               <TouchableOpacity
@@ -187,7 +184,7 @@ export function HomeScreen() {
                 </TouchableOpacity>
               ))}
             </View>
-          </Animated.View>
+          </TouchableOpacity>
         </TouchableOpacity>
       </Modal>
 
