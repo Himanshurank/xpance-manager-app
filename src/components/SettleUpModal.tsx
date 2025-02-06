@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useRef, useEffect } from "react";
 import {
   Modal,
   View,
@@ -6,6 +6,8 @@ import {
   StyleSheet,
   TouchableOpacity,
   ScrollView,
+  Animated,
+  Dimensions,
 } from "react-native";
 import Icon from "react-native-vector-icons/MaterialIcons";
 
@@ -17,6 +19,8 @@ interface SettleUpModalProps {
   userId?: string;
 }
 
+const { height } = Dimensions.get("window");
+
 export function SettleUpModal({
   visible,
   onClose,
@@ -24,6 +28,24 @@ export function SettleUpModal({
   expenses,
   userId,
 }: SettleUpModalProps) {
+  const slideAnim = useRef(new Animated.Value(height)).current;
+
+  useEffect(() => {
+    if (visible) {
+      Animated.timing(slideAnim, {
+        toValue: 0,
+        duration: 300,
+        useNativeDriver: true,
+      }).start();
+    } else {
+      Animated.timing(slideAnim, {
+        toValue: height,
+        duration: 300,
+        useNativeDriver: true,
+      }).start();
+    }
+  }, [visible]);
+
   const balances = members.map((member) => {
     const paid = expenses
       .filter((exp) => exp.paidById === member.id)
@@ -74,7 +96,7 @@ export function SettleUpModal({
     <Modal
       visible={visible}
       transparent={true}
-      animationType="slide"
+      animationType="fade"
       onRequestClose={onClose}
     >
       <TouchableOpacity
@@ -82,10 +104,13 @@ export function SettleUpModal({
         activeOpacity={1}
         onPress={onClose}
       >
-        <TouchableOpacity
-          activeOpacity={1}
-          style={styles.modalContent}
-          onPress={(e) => e.stopPropagation()}
+        <Animated.View
+          style={[
+            styles.modalContent,
+            {
+              transform: [{ translateY: slideAnim }],
+            },
+          ]}
         >
           <View style={styles.modalHeader}>
             <Text style={styles.modalTitle}>Settle Up</Text>
@@ -151,7 +176,7 @@ export function SettleUpModal({
               <Text style={styles.settleButtonText}>Mark as Settled</Text>
             </TouchableOpacity>
           </View>
-        </TouchableOpacity>
+        </Animated.View>
       </TouchableOpacity>
     </Modal>
   );

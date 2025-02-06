@@ -90,7 +90,7 @@ export function GroupSettingsModal({
       <Modal
         visible={visible}
         transparent={true}
-        animationType="slide"
+        animationType="fade"
         onRequestClose={onClose}
       >
         <TouchableOpacity

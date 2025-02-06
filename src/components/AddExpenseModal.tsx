@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   Modal,
   View,
@@ -10,12 +10,16 @@ import {
   ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
+  Animated,
+  Dimensions,
 } from "react-native";
 import Icon from "react-native-vector-icons/MaterialIcons";
 import { supabase } from "../lib/supabase";
 import Toaster from "../utils/toasterConfig";
 import { useAuth } from "../hooks/useAuth";
 import { Expense } from "../types/types";
+
+const { height } = Dimensions.get("window");
 
 interface AddExpenseModalProps {
   visible: boolean;
@@ -43,6 +47,7 @@ export function AddExpenseModal({
   );
   const [loading, setLoading] = useState(false);
   const [categories, setCategories] = useState<any[]>([]);
+  const slideAnim = useRef(new Animated.Value(height)).current;
 
   useEffect(() => {
     fetchCategories();
@@ -59,6 +64,22 @@ export function AddExpenseModal({
       setSelectedCategory("");
     }
   }, [visible, expense]);
+
+  useEffect(() => {
+    if (visible) {
+      Animated.timing(slideAnim, {
+        toValue: 0,
+        duration: 300,
+        useNativeDriver: true,
+      }).start();
+    } else {
+      Animated.timing(slideAnim, {
+        toValue: height,
+        duration: 300,
+        useNativeDriver: true,
+      }).start();
+    }
+  }, [visible]);
 
   const fetchCategories = async () => {
     const { data, error } = await supabase
@@ -131,7 +152,7 @@ export function AddExpenseModal({
     <Modal
       visible={visible}
       transparent={true}
-      animationType="slide"
+      animationType="fade"
       onRequestClose={onClose}
     >
       <TouchableOpacity
@@ -139,10 +160,13 @@ export function AddExpenseModal({
         activeOpacity={1}
         onPress={onClose}
       >
-        <TouchableOpacity
-          activeOpacity={1}
-          style={styles.modalContent}
-          onPress={(e) => e.stopPropagation()}
+        <Animated.View
+          style={[
+            styles.modalContent,
+            {
+              transform: [{ translateY: slideAnim }],
+            },
+          ]}
         >
           <View style={styles.modalHeader}>
             <Text style={styles.modalTitle}>Add Expense</Text>
@@ -236,7 +260,7 @@ export function AddExpenseModal({
               )}
             </TouchableOpacity>
           </ScrollView>
-        </TouchableOpacity>
+        </Animated.View>
       </TouchableOpacity>
     </Modal>
   );

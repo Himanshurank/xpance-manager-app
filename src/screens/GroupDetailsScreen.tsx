@@ -90,7 +90,7 @@ export function GroupDetailsScreen() {
     <Modal
       visible={showMembersModal}
       transparent={true}
-      animationType="slide"
+      animationType="fade"
       onRequestClose={() => setShowMembersModal(false)}
     >
       <TouchableOpacity
@@ -237,7 +237,7 @@ export function GroupDetailsScreen() {
       <Modal
         visible={visible}
         transparent={true}
-        animationType="slide"
+        animationType="fade"
         onRequestClose={onClose}
       >
         <KeyboardAvoidingView

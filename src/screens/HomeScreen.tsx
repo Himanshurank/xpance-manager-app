@@ -155,10 +155,13 @@ export function HomeScreen() {
           activeOpacity={1}
           onPress={() => toggleSidebar(false)}
         >
-          <TouchableOpacity
-            activeOpacity={1}
-            style={styles.sidebar}
-            onPress={(e) => e.stopPropagation()}
+          <Animated.View
+            style={[
+              styles.sidebar,
+              {
+                transform: [{ translateX: slideAnim }],
+              },
+            ]}
           >
             <View style={styles.sidebarHeader}>
               <TouchableOpacity
@@ -184,7 +187,7 @@ export function HomeScreen() {
                 </TouchableOpacity>
               ))}
             </View>
-          </TouchableOpacity>
+          </Animated.View>
         </TouchableOpacity>
       </Modal>
 

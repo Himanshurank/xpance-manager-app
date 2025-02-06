@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   StyleSheet,
   View,
@@ -10,12 +10,16 @@ import {
   Modal,
   KeyboardAvoidingView,
   Platform,
+  Animated,
+  Dimensions,
 } from "react-native";
 import Icon from "react-native-vector-icons/MaterialIcons";
 import { useNavigation } from "@react-navigation/native";
 import { useAuth } from "../hooks/useAuth";
 import { supabase } from "../lib/supabase";
 import Toaster from "../utils/toasterConfig";
+
+const { height } = Dimensions.get("window");
 
 export function PersonalInformationScreen() {
   const navigation = useNavigation();
@@ -40,6 +44,8 @@ export function PersonalInformationScreen() {
     { symbol: "¥", name: "JPY - Japanese Yen" },
   ];
 
+  const slideAnim = useRef(new Animated.Value(height)).current;
+
   useEffect(() => {
     if (user) {
       setFormData({
@@ -53,6 +59,22 @@ export function PersonalInformationScreen() {
       });
     }
   }, [user]);
+
+  useEffect(() => {
+    if (showCurrencyModal) {
+      Animated.timing(slideAnim, {
+        toValue: 0,
+        duration: 300,
+        useNativeDriver: true,
+      }).start();
+    } else {
+      Animated.timing(slideAnim, {
+        toValue: height,
+        duration: 300,
+        useNativeDriver: true,
+      }).start();
+    }
+  }, [showCurrencyModal]);
 
   const handleSave = async () => {
     try {
@@ -202,7 +224,7 @@ export function PersonalInformationScreen() {
       <Modal
         visible={showCurrencyModal}
         transparent={true}
-        animationType="slide"
+        animationType="fade"
         onRequestClose={() => setShowCurrencyModal(false)}
       >
         <TouchableOpacity
@@ -210,10 +232,13 @@ export function PersonalInformationScreen() {
           activeOpacity={1}
           onPress={() => setShowCurrencyModal(false)}
         >
-          <TouchableOpacity
-            activeOpacity={1}
-            style={styles.modalContent}
-            onPress={(e) => e.stopPropagation()}
+          <Animated.View
+            style={[
+              styles.modalContent,
+              {
+                transform: [{ translateY: slideAnim }],
+              },
+            ]}
           >
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>Select Currency</Text>
@@ -239,7 +264,7 @@ export function PersonalInformationScreen() {
                 </TouchableOpacity>
               ))}
             </ScrollView>
-          </TouchableOpacity>
+          </Animated.View>
         </TouchableOpacity>
       </Modal>
     </SafeAreaView>
