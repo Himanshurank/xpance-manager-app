@@ -29,6 +29,8 @@ import { AddIncomeModal } from "../components/AddIncomeModal";
 import { AddExpenseModal } from "../components/AddExpenseModal";
 import Toaster from "../utils/toasterConfig";
 import { Expense, RootStackParamList } from "../types/types";
+import { Sidebar } from "../components/common/Sidebar";
+import { User } from "@supabase/supabase-js";
 
 const { StatusBarManager } = NativeModules;
 const { width } = Dimensions.get("window");
@@ -92,11 +94,36 @@ export function HomeScreen() {
   }, [user?.id]);
 
   const menuItems = [
-    { icon: "dashboard", label: "Home" },
-    { icon: "group", label: "Group" },
-    { icon: "account-balance-wallet", label: "Transaction" },
-    { icon: "pie-chart", label: "Analytics" },
-    { icon: "settings", label: "Profile" },
+    {
+      icon: "dashboard",
+      label: "Home",
+      description: "Overview & quick actions",
+    },
+    {
+      icon: "group",
+      label: "Groups",
+      description: "Manage shared expenses",
+    },
+    {
+      icon: "receipt-long",
+      label: "Transactions",
+      description: "View all expenses",
+    },
+    {
+      icon: "pie-chart",
+      label: "Analytics",
+      description: "Spending insights",
+    },
+    {
+      icon: "help-outline",
+      label: "Help",
+      description: "Support & guides",
+    },
+    {
+      icon: "settings",
+      label: "Settings",
+      description: "App preferences",
+    },
   ];
 
   const handleEditExpense = (expense: Expense) => {
@@ -155,39 +182,12 @@ export function HomeScreen() {
           activeOpacity={1}
           onPress={() => toggleSidebar(false)}
         >
-          <Animated.View
-            style={[
-              styles.sidebar,
-              {
-                transform: [{ translateX: slideAnim }],
-              },
-            ]}
-          >
-            <View style={styles.sidebarHeader}>
-              <TouchableOpacity
-                style={styles.closeButton}
-                onPress={() => toggleSidebar(false)}
-              >
-                <Icon name="close" size={24} color="#666" />
-              </TouchableOpacity>
-            </View>
-
-            <View style={styles.menuItems}>
-              {menuItems.map((item, index) => (
-                <TouchableOpacity
-                  key={index}
-                  style={styles.menuItem}
-                  onPress={() => {
-                    navigation.navigate(item.label as keyof RootStackParamList);
-                    toggleSidebar(false);
-                  }}
-                >
-                  <Icon name={item.icon} size={24} color="#1a1a1a" />
-                  <Text style={styles.menuItemText}>{item.label}</Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-          </Animated.View>
+          <Sidebar
+            isOpen={isSidebarOpen}
+            onClose={() => toggleSidebar(false)}
+            slideAnim={slideAnim}
+            user={user as User}
+          />
         </TouchableOpacity>
       </Modal>
 
@@ -426,57 +426,6 @@ const styles = StyleSheet.create({
   modalOverlay: {
     flex: 1,
     backgroundColor: "rgba(0, 0, 0, 0.5)",
-  },
-  sidebar: {
-    width: "80%",
-    maxWidth: 300,
-    backgroundColor: "#fff",
-    height: "100%",
-    paddingTop: Platform.OS === "ios" ? 50 : 20,
-    paddingHorizontal: 16,
-    position: "absolute",
-    left: 0,
-    top: 0,
-    bottom: 0,
-  },
-  sidebarHeader: {
-    flexDirection: "row",
-    justifyContent: "flex-end",
-    marginBottom: 20,
-  },
-  closeButton: {
-    padding: 8,
-  },
-  menuItems: {
-    marginTop: 20,
-  },
-  menuItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    borderRadius: 8,
-    marginBottom: 8,
-  },
-  menuItemText: {
-    marginLeft: 16,
-    fontSize: 16,
-    color: "#1a1a1a",
-  },
-  logoutButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    borderRadius: 8,
-    marginTop: "auto",
-    marginBottom: 20,
-  },
-  logoutText: {
-    marginLeft: 16,
-    fontSize: 16,
-    color: "#EA4335",
-    fontWeight: "500",
   },
   scrollView: {
     flex: 1,
