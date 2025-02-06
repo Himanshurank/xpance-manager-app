@@ -28,20 +28,10 @@ import { useIncome } from "../hooks/useIncome";
 import { AddIncomeModal } from "../components/AddIncomeModal";
 import { AddExpenseModal } from "../components/AddExpenseModal";
 import Toaster from "../utils/toasterConfig";
-import { Expense } from "../types/types";
+import { Expense, RootStackParamList } from "../types/types";
 
 const { StatusBarManager } = NativeModules;
 const { width } = Dimensions.get("window");
-
-type RootStackParamList = {
-  Group: undefined;
-  GroupDetails: undefined;
-  Transaction: undefined;
-  Home: undefined;
-  Analytics: undefined;
-  Settings: undefined;
-  Profile: undefined;
-};
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 

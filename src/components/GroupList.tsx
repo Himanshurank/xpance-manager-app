@@ -1,3 +1,5 @@
+import React from "react";
+import { useNavigation } from "@react-navigation/native";
 import {
   StyleSheet,
   View,
@@ -7,7 +9,6 @@ import {
 } from "react-native";
 import MaterialIcons from "react-native-vector-icons/MaterialIcons";
 import { Group } from "../types/types";
-import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 
 type RootStackParamList = {

@@ -175,10 +175,9 @@ export function AnalyticsScreen() {
         </View>
 
         <View style={styles.topCategoriesContainer}>
-          <Text style={styles.chartTitle}>Top Categories</Text>
+          <Text style={styles.chartTitle}>All Categories</Text>
           {getCategoryData()
             .sort((a, b) => b.amount - a.amount)
-            .slice(0, 3)
             .map((category, index) => (
               <View key={index} style={styles.categoryItem}>
                 <View style={styles.categoryInfo}>
@@ -188,10 +187,18 @@ export function AnalyticsScreen() {
                       { backgroundColor: category.color },
                     ]}
                   />
-                  <Text style={styles.categoryName}>{category.name}</Text>
+                  <View style={styles.categoryTextContainer}>
+                    <Text style={styles.categoryName}>{category.name}</Text>
+                    <Text style={styles.categoryPercentage}>
+                      {((category.amount / getTotalSpending()) * 100).toFixed(
+                        1
+                      )}
+                      %
+                    </Text>
+                  </View>
                 </View>
                 <Text style={styles.categoryAmount}>
-                  ₹{category.amount.toFixed(2)}
+                  ₹{category.amount.toFixed(0)}
                 </Text>
               </View>
             ))}
@@ -306,8 +313,7 @@ const styles = StyleSheet.create({
   topCategoriesContainer: {
     padding: 16,
     backgroundColor: "#fff",
-    borderRadius: 12,
-    marginBottom: 16,
+    marginTop: 16,
   },
   categoryItem: {
     flexDirection: "row",
@@ -320,20 +326,29 @@ const styles = StyleSheet.create({
   categoryInfo: {
     flexDirection: "row",
     alignItems: "center",
+    flex: 1,
   },
   categoryDot: {
-    width: 12,
-    height: 12,
-    borderRadius: 6,
-    marginRight: 8,
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    marginRight: 12,
+  },
+  categoryTextContainer: {
+    flex: 1,
   },
   categoryName: {
-    fontSize: 16,
+    fontSize: 14,
     color: "#1a1a1a",
+    marginBottom: 2,
+  },
+  categoryPercentage: {
+    fontSize: 12,
+    color: "#666",
   },
   categoryAmount: {
-    fontSize: 16,
-    fontWeight: "500",
+    fontSize: 14,
+    fontWeight: "600",
     color: "#1a1a1a",
   },
 });

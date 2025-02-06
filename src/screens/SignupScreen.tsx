@@ -10,10 +10,10 @@ import {
   Alert,
 } from "react-native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import { RootStackParamList } from "../../App";
 import { useNavigation } from "@react-navigation/native";
 import { supabase } from "../lib/supabase";
 import Toaster from "../utils/toasterConfig";
+import { RootStackParamList } from "../types/types";
 
 type SignupScreenNavigationProp = NativeStackNavigationProp<
   RootStackParamList,

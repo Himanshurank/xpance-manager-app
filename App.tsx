@@ -12,18 +12,8 @@ import { GroupDetailsScreen } from "./src/screens/GroupDetailsScreen";
 import { AllExpensesScreen } from "./src/screens/AllExpensesScreen";
 import { ProfileScreen } from "./src/screens/ProfileScreen";
 import { AnalyticsScreen } from "./src/screens/AnalyticsScreen";
-
-export type RootStackParamList = {
-  Login: undefined;
-  Signup: undefined;
-  Home: undefined;
-  Group: undefined;
-  GroupDetails: undefined;
-  Transaction: undefined;
-  Analytics: undefined;
-  Settings: undefined;
-  Profile: undefined;
-};
+import { PersonalInformationScreen } from "./src/screens/PersonalInformationScreen";
+import { RootStackParamList } from "./src/types/types";
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -58,6 +48,10 @@ export default function App() {
               <Stack.Screen name="Transaction" component={AllExpensesScreen} />
               <Stack.Screen name="Profile" component={ProfileScreen} />
               <Stack.Screen name="Analytics" component={AnalyticsScreen} />
+              <Stack.Screen
+                name="PersonalInformation"
+                component={PersonalInformationScreen}
+              />
             </>
           )}
         </Stack.Navigator>

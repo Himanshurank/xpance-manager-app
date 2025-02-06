@@ -42,3 +42,16 @@ export interface Expense {
   created_at: string;
   paidById?: string;
 }
+
+export type RootStackParamList = {
+  Login: undefined;
+  Signup: undefined;
+  Home: undefined;
+  Group: undefined;
+  GroupDetails: undefined;
+  Transaction: undefined;
+  Analytics: undefined;
+  Settings: undefined;
+  Profile: undefined;
+  PersonalInformation: undefined;
+};

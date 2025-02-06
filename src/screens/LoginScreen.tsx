@@ -10,11 +10,11 @@ import {
 } from "react-native";
 import GoogleIcon from "../../assets/google-icon.svg";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import { RootStackParamList } from "../../App";
 import { useNavigation } from "@react-navigation/native";
 import { useAuth } from "../hooks/useAuth";
 import Toaster from "../utils/toasterConfig";
 import Icon from "react-native-vector-icons/MaterialIcons";
+import { RootStackParamList } from "../types/types";
 
 type LoginScreenNavigationProp = NativeStackNavigationProp<
   RootStackParamList,

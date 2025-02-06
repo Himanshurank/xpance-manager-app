@@ -6,16 +6,20 @@ import {
   SafeAreaView,
   TouchableOpacity,
   ScrollView,
-  Image,
 } from "react-native";
 import Icon from "react-native-vector-icons/MaterialIcons";
 import { useNavigation } from "@react-navigation/native";
 import { useAuth } from "../hooks/useAuth";
+import { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import { RootStackParamList } from "../types/types";
+
+type ProfileScreenNavigationProp =
+  NativeStackNavigationProp<RootStackParamList>;
 
 const menuItems = [
   {
     icon: "account-circle",
-    label: "Personal Information",
+    label: "PersonalInformation",
     color: "#1a73e8",
   },
   {
@@ -30,18 +34,18 @@ const menuItems = [
   },
   {
     icon: "payment",
-    label: "Payment Methods",
+    label: "PaymentMethods",
     color: "#ea4335",
   },
   {
     icon: "help",
-    label: "Help & Support",
+    label: "HelpSupport",
     color: "#9334ea",
   },
 ];
 
 export function ProfileScreen() {
-  const navigation = useNavigation();
+  const navigation = useNavigation<ProfileScreenNavigationProp>();
   const { user, signOut } = useAuth();
 
   return (
@@ -77,7 +81,13 @@ export function ProfileScreen() {
 
         <View style={styles.menuSection}>
           {menuItems.map((item, index) => (
-            <TouchableOpacity key={index} style={styles.menuItem}>
+            <TouchableOpacity
+              key={index}
+              style={styles.menuItem}
+              onPress={() =>
+                navigation.navigate(item.label as keyof RootStackParamList)
+              }
+            >
               <View
                 style={[styles.iconContainer, { backgroundColor: item.color }]}
               >
