@@ -1,6 +1,6 @@
 import React from "react";
 import { StyleSheet, View, Text } from "react-native";
-import { CategoryData } from "./types";
+import { CategoryData } from "../../types/types";
 
 interface CategoryListProps {
   categories: CategoryData[];
@@ -8,11 +8,13 @@ interface CategoryListProps {
 }
 
 export function CategoryList({ categories, totalSpending }: CategoryListProps) {
+  const getAmount = (amount: unknown): number => Number(amount) || 0;
+
   return (
     <View style={styles.container}>
       <Text style={styles.title}>All Categories</Text>
       {categories
-        .sort((a, b) => b.amount - a.amount)
+        .sort((a, b) => getAmount(b.amount) - getAmount(a.amount))
         .map((category, index) => (
           <View key={index} style={styles.item}>
             <View style={styles.info}>
@@ -20,11 +22,16 @@ export function CategoryList({ categories, totalSpending }: CategoryListProps) {
               <View style={styles.textContainer}>
                 <Text style={styles.name}>{category.name}</Text>
                 <Text style={styles.percentage}>
-                  {((category.amount / totalSpending) * 100).toFixed(1)}%
+                  {((getAmount(category.amount) / totalSpending) * 100).toFixed(
+                    1
+                  )}
+                  %
                 </Text>
               </View>
             </View>
-            <Text style={styles.amount}>₹{category.amount.toFixed(0)}</Text>
+            <Text style={styles.amount}>
+              ₹{getAmount(category.amount).toFixed(0)}
+            </Text>
           </View>
         ))}
     </View>

@@ -59,3 +59,11 @@ export type RootStackParamList = {
   PaymentMethods: undefined;
   HelpSupport: undefined;
 };
+
+export interface CategoryData {
+  name: string;
+  amount: number | unknown;
+  color: string;
+  legendFontColor: string;
+  legendFontSize: number;
+}
