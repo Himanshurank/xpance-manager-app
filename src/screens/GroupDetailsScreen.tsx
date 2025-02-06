@@ -21,7 +21,7 @@ import { ExpenseList } from "../components/ExpenseList";
 import { useExpenses } from "../hooks/useExpenses";
 import { SettleUpModal } from "../components/SettleUpModal";
 import { AddMemberModal } from "../components/group/AddMemberModal";
-import { ShowAllMemberModal } from "./ShowAllMemberModal";
+import { ShowAllMemberModal } from "../components/group/ShowAllMemberModal";
 import { GroupHeader } from "../components/group/GroupHeader";
 import { QuickActions } from "../components/group/QuickActions";
 
@@ -329,7 +329,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     backgroundColor: "#fff",
   },
-
   expenseSummary: {
     flexDirection: "row",
     backgroundColor: "#f8f9fa",
