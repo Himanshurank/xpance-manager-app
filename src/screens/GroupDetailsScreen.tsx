@@ -3,9 +3,9 @@ import {
   StyleSheet,
   View,
   Text,
-  TouchableOpacity,
   SafeAreaView,
   ActivityIndicator,
+  TouchableOpacity,
 } from "react-native";
 import Icon from "react-native-vector-icons/MaterialIcons";
 import { useNavigation, useRoute } from "@react-navigation/native";
@@ -22,14 +22,13 @@ import { useExpenses } from "../hooks/useExpenses";
 import { SettleUpModal } from "../components/SettleUpModal";
 import { AddMemberModal } from "../components/group/AddMemberModal";
 import { ShowAllMemberModal } from "./ShowAllMemberModal";
+import { GroupHeader } from "../components/group/GroupHeader";
+import { QuickActions } from "../components/group/QuickActions";
 
 export function GroupDetailsScreen() {
   const route = useRoute<any>();
-  const navigation = useNavigation<
-    NavigationProp<{
-      GroupDetails: GroupDetails;
-    }>
-  >();
+  const navigation =
+    useNavigation<NavigationProp<{ GroupDetails: GroupDetails }>>();
   const { user } = useAuth();
   const { id: groupId, name, icon, color, memberCount } = route.params;
   const { members, membersLoading, fetchMembers } = useGroupMembers(groupId);
@@ -59,10 +58,6 @@ export function GroupDetailsScreen() {
     }
   }, [currentGroup]);
 
-  const onGroupUpdated = (updatedGroup: GroupDetails) => {
-    setCurrentGroup(updatedGroup);
-  };
-
   useEffect(() => {
     fetchMembers();
     fetchExpenses();
@@ -86,15 +81,11 @@ export function GroupDetailsScreen() {
         .single();
 
       if (userError) {
-        Toaster({
-          type: "error",
-          text1: "Error",
-          text2: "User not found",
-        });
+        Toaster({ type: "error", text1: "Error", text2: "User not found" });
         return;
       }
 
-      const { data: existingMember, error: memberCheckError } = await supabase
+      const { data: existingMember } = await supabase
         .from("group_members")
         .select("id")
         .eq("group_id", groupId)
@@ -110,26 +101,18 @@ export function GroupDetailsScreen() {
         return;
       }
 
-      const { error: addError } = await supabase.from("group_members").insert([
-        {
-          group_id: groupId,
-          user_id: userData.id,
-          role: "member",
-        },
-      ]);
-
-      if (addError) throw addError;
+      await supabase
+        .from("group_members")
+        .insert([{ group_id: groupId, user_id: userData.id, role: "member" }]);
 
       Toaster({
         type: "success",
         text1: "Success",
         text2: "Member added successfully",
       });
-
       setShowAddMemberModal(false);
       fetchMembers();
     } catch (error: any) {
-      console.error("Error adding member:", error);
       Toaster({
         type: "error",
         text1: "Error",
@@ -155,88 +138,42 @@ export function GroupDetailsScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity
-          onPress={() => navigation.goBack()}
-          style={styles.backButton}
-        >
-          <Icon name="arrow-back" size={24} color="#1a1a1a" />
-        </TouchableOpacity>
-        <View style={styles.headerTitle}>
-          <View
-            style={[styles.groupIcon, { backgroundColor: color || "#1a73e8" }]}
-          >
-            <Icon name={icon || "group"} size={24} color="#fff" />
-          </View>
-          <Text style={styles.groupName}>{name || ""}</Text>
-        </View>
-        <TouchableOpacity
-          style={styles.moreButton}
-          onPress={() => setShowSettingsModal(true)}
-        >
-          <Icon name="more-vert" size={24} color="#1a1a1a" />
-        </TouchableOpacity>
-      </View>
+      <GroupHeader
+        name={name}
+        icon={icon}
+        color={color}
+        navigation={navigation}
+        onSettingsPress={() => setShowSettingsModal(true)}
+      />
 
-      {/* Quick Actions */}
-      <View style={styles.quickActions}>
-        <TouchableOpacity
-          style={styles.actionButton}
-          onPress={() => setShowAddExpenseModal(true)}
-        >
-          <View style={[styles.actionIcon, { backgroundColor: "#34A853" }]}>
-            <Icon name="add" size={24} color="#fff" />
-          </View>
-          <Text style={styles.actionText}>Add Expense</Text>
-        </TouchableOpacity>
+      <QuickActions
+        onAddExpense={() => setShowAddExpenseModal(true)}
+        onAddMember={() => setShowAddMemberModal(true)}
+        onSettleUp={() => setShowSettleUpModal(true)}
+      />
 
-        <TouchableOpacity
-          style={styles.actionButton}
-          onPress={() => setShowAddMemberModal(true)}
-        >
-          <View style={[styles.actionIcon, { backgroundColor: "#1a73e8" }]}>
-            <Icon name="person-add" size={24} color="#fff" />
-          </View>
-          <Text style={styles.actionText}>Add Member</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={styles.actionButton}
-          onPress={() => setShowSettleUpModal(true)}
-        >
-          <View style={[styles.actionIcon, { backgroundColor: "#EA4335" }]}>
-            <Icon name="receipt-long" size={24} color="#fff" />
-          </View>
-          <Text style={styles.actionText}>Settle Up</Text>
-        </TouchableOpacity>
-      </View>
-
-      {/* Content */}
       <View style={styles.content}>
-        {/* Members Section */}
-        {!membersLoading && (
-          <View style={styles.section}>
-            <View style={styles.sectionHeader}>
-              <Text style={styles.sectionTitle}>
-                Members ({memberCount || 0})
-              </Text>
-              <TouchableOpacity onPress={() => setShowMembersModal(true)}>
-                <Text style={styles.seeAllText}>See All</Text>
-              </TouchableOpacity>
-            </View>
-            {members.slice(0, 3).map((member) => (
-              <View key={member.id} style={styles.memberPreview}>
-                <View style={styles.memberAvatar}>
-                  <Text style={styles.avatarText}>
-                    {member.name[0].toUpperCase()}
-                  </Text>
-                </View>
-                <Text style={styles.memberPreviewName}>{member.name}</Text>
-              </View>
-            ))}
+        {/* Members Preview */}
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>
+              Members ({memberCount || 0})
+            </Text>
+            <TouchableOpacity onPress={() => setShowMembersModal(true)}>
+              <Text style={styles.seeAllText}>See All</Text>
+            </TouchableOpacity>
           </View>
-        )}
+          {members.slice(0, 3).map((member) => (
+            <View key={member.id} style={styles.memberPreview}>
+              <View style={styles.memberAvatar}>
+                <Text style={styles.avatarText}>
+                  {member.name[0].toUpperCase()}
+                </Text>
+              </View>
+              <Text style={styles.memberPreviewName}>{member.name}</Text>
+            </View>
+          ))}
+        </View>
 
         {/* Expense Summary Section */}
         <View style={styles.section}>
@@ -305,7 +242,7 @@ export function GroupDetailsScreen() {
         groupDetails={currentGroup}
         isAdmin={isAdmin}
         navigation={navigation}
-        onGroupUpdated={onGroupUpdated}
+        onGroupUpdated={setCurrentGroup}
       />
       <AddExpenseModal
         visible={showAddExpenseModal}
@@ -337,61 +274,6 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#fff",
   },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: "#f0f0f0",
-  },
-  backButton: {
-    padding: 8,
-  },
-  headerTitle: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  groupIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    justifyContent: "center",
-    alignItems: "center",
-    marginRight: 12,
-  },
-  groupName: {
-    fontSize: 18,
-    fontWeight: "600",
-    color: "#1a1a1a",
-  },
-  moreButton: {
-    padding: 8,
-  },
-  quickActions: {
-    flexDirection: "row",
-    justifyContent: "space-around",
-    padding: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: "#f0f0f0",
-  },
-  actionButton: {
-    alignItems: "center",
-  },
-  actionIcon: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    justifyContent: "center",
-    alignItems: "center",
-    marginBottom: 8,
-  },
-  actionText: {
-    fontSize: 12,
-    color: "#1a1a1a",
-    fontWeight: "500",
-  },
   content: {
     flex: 1,
     backgroundColor: "#f5f5f5",
@@ -417,44 +299,10 @@ const styles = StyleSheet.create({
     color: "#1a73e8",
     fontWeight: "500",
   },
-
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: "rgba(0, 0, 0, 0.5)",
-    justifyContent: "flex-end",
-  },
-  modalContent: {
-    backgroundColor: "#fff",
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    padding: 20,
-  },
-  modalHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 20,
-  },
-  modalTitle: {
-    fontSize: 20,
-    fontWeight: "600",
-    color: "#1a1a1a",
-  },
-  membersList: {
-    padding: 20,
-  },
-  memberItem: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: "#f0f0f0",
-  },
-  memberInfo: {
+  memberPreview: {
     flexDirection: "row",
     alignItems: "center",
-    flex: 1,
+    paddingVertical: 8,
   },
   memberAvatar: {
     width: 40,
@@ -470,48 +318,10 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "600",
   },
-  memberDetails: {
-    flex: 1,
-  },
-  memberName: {
-    fontSize: 16,
-    fontWeight: "500",
-    color: "#1a1a1a",
-  },
-  memberEmail: {
-    fontSize: 14,
-    color: "#666",
-  },
-  memberRole: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  roleText: {
-    fontSize: 12,
-    color: "#666",
-    textTransform: "capitalize",
-  },
-  adminRole: {
-    color: "#1a73e8",
-    fontWeight: "500",
-  },
-  youText: {
-    fontSize: 12,
-    color: "#666",
-    marginLeft: 4,
-  },
-  memberPreview: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingVertical: 8,
-  },
   memberPreviewName: {
     fontSize: 16,
     color: "#1a1a1a",
     marginLeft: 12,
-  },
-  closeButton: {
-    padding: 8,
   },
   loadingContainer: {
     flex: 1,
