@@ -1,12 +1,10 @@
 import React from "react";
 import { StyleSheet, View, Text, TouchableOpacity } from "react-native";
-
-const timeRanges = ["Week", "Month", "Year"] as const;
-export type TimeRange = (typeof timeRanges)[number];
+import { ETimeRange } from "../../types/Enums";
 
 interface TimeRangeSelectorProps {
-  selectedRange: TimeRange;
-  onRangeChange: (range: TimeRange) => void;
+  selectedRange: ETimeRange;
+  onRangeChange: (range: ETimeRange) => void;
 }
 
 export function TimeRangeSelector({
@@ -15,7 +13,7 @@ export function TimeRangeSelector({
 }: TimeRangeSelectorProps) {
   return (
     <View style={styles.container}>
-      {timeRanges.map((range) => (
+      {Object.values(ETimeRange).map((range) => (
         <TouchableOpacity
           key={range}
           style={[

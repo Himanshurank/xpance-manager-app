@@ -1,3 +1,5 @@
+import { ETimeRange } from "./Enums";
+
 export interface Group {
   id: string;
   name: string;
@@ -16,6 +18,7 @@ export interface Member {
   name: string;
   role: "admin" | "member";
 }
+
 export interface GroupMember {
   id: string;
   group_id: string;

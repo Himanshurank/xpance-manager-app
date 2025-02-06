@@ -13,16 +13,16 @@ import { useNavigation } from "@react-navigation/native";
 import { PieChart } from "react-native-chart-kit";
 import { useExpenses } from "../hooks/useExpenses";
 import { useAuth } from "../hooks/useAuth";
-import {
-  TimeRangeSelector,
-  type TimeRange,
-} from "../components/analytics/TimeRangeSelector";
+import { TimeRangeSelector } from "../components/analytics/TimeRangeSelector";
 import { SpendingSummary } from "../components/analytics/SpendingSummary";
 import { CategoryList } from "../components/analytics/CategoryList";
 import {
-  getFilteredExpenses,
   getCategoryData,
+  getFilteredExpenses,
 } from "../utils/expenseAnalytics";
+import { ETimeRange } from "../types/Enums";
+import { Expense } from "../types/types";
+import Toaster from "../utils/toasterConfig";
 
 const { width } = Dimensions.get("window");
 
@@ -30,7 +30,10 @@ export function AnalyticsScreen() {
   const navigation = useNavigation();
   const { user } = useAuth();
   const { allExpenses, fetchExpenses } = useExpenses(undefined, user?.id);
-  const [selectedRange, setSelectedRange] = useState<TimeRange>("Month");
+  const [selectedRange, setSelectedRange] = useState<ETimeRange>(
+    ETimeRange.Today
+  );
+  const [filteredData, setFilteredData] = useState<Expense[]>([]);
 
   useEffect(() => {
     if (user?.id) {
@@ -38,14 +41,18 @@ export function AnalyticsScreen() {
     }
   }, [user?.id]);
 
-  const filteredExpenses = getFilteredExpenses(allExpenses, selectedRange);
-  const categoryData = getCategoryData(filteredExpenses);
-  const totalSpending = filteredExpenses.reduce(
+  useEffect(() => {
+    const filtered = getFilteredExpenses(allExpenses, selectedRange);
+    setFilteredData(filtered);
+  }, [allExpenses, selectedRange]);
+
+  const categoryData = getCategoryData(filteredData);
+  const totalSpending = filteredData.reduce(
     (sum, expense) => sum + expense.amount,
     0
   );
-  const averageSpending = filteredExpenses.length
-    ? totalSpending / filteredExpenses.length
+  const averageSpending = filteredData.length
+    ? totalSpending / filteredData.length
     : 0;
 
   return (
@@ -95,6 +102,28 @@ export function AnalyticsScreen() {
         </View>
 
         <CategoryList categories={categoryData} totalSpending={totalSpending} />
+
+        <View style={styles.downloadSection}>
+          <TouchableOpacity
+            style={styles.downloadButton}
+            onPress={() => {
+              // Handle download functionality
+              Toaster({
+                type: "info",
+                text1: "Coming Soon",
+                text2: "This feature will be available soon!",
+              });
+            }}
+          >
+            <Icon
+              name="download"
+              size={20}
+              color="#fff"
+              style={styles.downloadIcon}
+            />
+            <Text style={styles.downloadText}>Download Report</Text>
+          </TouchableOpacity>
+        </View>
       </ScrollView>
     </SafeAreaView>
   );
@@ -150,5 +179,57 @@ const styles = StyleSheet.create({
   chartContent: {
     flexDirection: "column",
     alignItems: "center",
+  },
+  rangeSelector: {
+    flexDirection: "row",
+    padding: 16,
+    justifyContent: "space-between",
+    backgroundColor: "#fff",
+  },
+  rangeButton: {
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderRadius: 20,
+    backgroundColor: "#f5f5f5",
+  },
+  selectedRange: {
+    backgroundColor: "#1a73e8",
+  },
+  rangeText: {
+    fontSize: 14,
+    color: "#666",
+    fontWeight: "500",
+  },
+  selectedRangeText: {
+    color: "#fff",
+  },
+  downloadSection: {
+    padding: 16,
+    marginTop: 8,
+    marginBottom: 24,
+  },
+  downloadButton: {
+    backgroundColor: "#1a73e8",
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    padding: 16,
+    borderRadius: 12,
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+    elevation: 3,
+  },
+  downloadIcon: {
+    marginRight: 8,
+  },
+  downloadText: {
+    color: "#fff",
+    fontSize: 16,
+    fontWeight: "600",
   },
 });

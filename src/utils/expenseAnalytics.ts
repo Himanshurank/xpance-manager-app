@@ -1,4 +1,4 @@
-import { TimeRange } from "../components/analytics/TimeRangeSelector";
+import { ETimeRange } from "../types/Enums";
 
 const pastelColors = [
   "#FFB3BA",
@@ -13,30 +13,57 @@ const pastelColors = [
   "#FFDFD3",
 ];
 
-export function getFilteredExpenses(
-  allExpenses: any[],
-  selectedRange: TimeRange
-) {
+export const getDateRangeFilter = (range: ETimeRange) => {
   const now = new Date();
-  return allExpenses.filter((expense) => {
-    const expenseDate = new Date(expense.created_at);
-    switch (selectedRange) {
-      case "Week":
-        const weekAgo = new Date(now);
-        weekAgo.setDate(now.getDate() - 7);
-        return expenseDate >= weekAgo;
-      case "Month":
-        return (
-          expenseDate.getMonth() === now.getMonth() &&
-          expenseDate.getFullYear() === now.getFullYear()
-        );
-      case "Year":
-        return expenseDate.getFullYear() === now.getFullYear();
-      default:
-        return true;
-    }
+  const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  startOfDay.setHours(0, 0, 0, 0); // Set to beginning of day
+
+  switch (range) {
+    case ETimeRange.Today:
+      return {
+        start: startOfDay,
+        end: now,
+      };
+    case ETimeRange.Week:
+      const weekStart = new Date(now);
+      weekStart.setDate(now.getDate() - 6);
+      weekStart.setHours(0, 0, 0, 0);
+      return {
+        start: weekStart,
+        end: now,
+      };
+    case ETimeRange.Month:
+      const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+      monthStart.setHours(0, 0, 0, 0);
+      return {
+        start: monthStart,
+        end: now,
+      };
+    case ETimeRange.Year:
+      const yearStart = new Date(now.getFullYear(), 0, 1);
+      yearStart.setHours(0, 0, 0, 0);
+      return {
+        start: yearStart,
+        end: now,
+      };
+    default:
+      return {
+        start: startOfDay,
+        end: now,
+      };
+  }
+};
+
+export const getFilteredExpenses = (expenses: any[], range: ETimeRange) => {
+  if (!expenses || expenses.length === 0) return [];
+
+  const { start, end } = getDateRangeFilter(range);
+
+  return expenses.filter((expense) => {
+    const expenseDate = new Date(expense.created_at); // Make sure this matches your date field name
+    return expenseDate >= start && expenseDate <= end;
   });
-}
+};
 
 export function getCategoryData(expenses: any[]) {
   const categoryTotals = expenses.reduce((acc, expense) => {
