@@ -54,4 +54,8 @@ export type RootStackParamList = {
   Settings: undefined;
   Profile: undefined;
   PersonalInformation: undefined;
+  Notification: undefined;
+  Security: undefined;
+  PaymentMethods: undefined;
+  HelpSupport: undefined;
 };

@@ -13,7 +13,11 @@ import { AllExpensesScreen } from "./src/screens/AllExpensesScreen";
 import { ProfileScreen } from "./src/screens/ProfileScreen";
 import { AnalyticsScreen } from "./src/screens/AnalyticsScreen";
 import { PersonalInformationScreen } from "./src/screens/PersonalInformationScreen";
+import { NotificationScreen } from "./src/screens/NotificationScreen";
 import { RootStackParamList } from "./src/types/types";
+import { SecurityScreen } from "./src/screens/SecurityScreen";
+import { PaymentMethodsScreen } from "./src/screens/PaymentMethodsScreen";
+import { HelpSupportScreen } from "./src/screens/HelpSupportScreen";
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -52,6 +56,16 @@ export default function App() {
                 name="PersonalInformation"
                 component={PersonalInformationScreen}
               />
+              <Stack.Screen
+                name="Notification"
+                component={NotificationScreen}
+              />
+              <Stack.Screen name="Security" component={SecurityScreen} />
+              <Stack.Screen
+                name="PaymentMethods"
+                component={PaymentMethodsScreen}
+              />
+              <Stack.Screen name="HelpSupport" component={HelpSupportScreen} />
             </>
           )}
         </Stack.Navigator>

@@ -24,7 +24,7 @@ const menuItems = [
   },
   {
     icon: "notifications",
-    label: "Notifications",
+    label: "Notification",
     color: "#fbbc04",
   },
   {
@@ -84,9 +84,9 @@ export function ProfileScreen() {
             <TouchableOpacity
               key={index}
               style={styles.menuItem}
-              onPress={() =>
-                navigation.navigate(item.label as keyof RootStackParamList)
-              }
+              onPress={() => {
+                navigation.navigate(item.label as keyof RootStackParamList);
+              }}
             >
               <View
                 style={[styles.iconContainer, { backgroundColor: item.color }]}

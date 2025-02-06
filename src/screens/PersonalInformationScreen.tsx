@@ -178,6 +178,7 @@ export function PersonalInformationScreen() {
                   setFormData({ ...formData, dateOfBirth: text })
                 }
                 placeholder="DD/MM/YYYY"
+                keyboardType="numeric"
               />
             </View>
           </View>
