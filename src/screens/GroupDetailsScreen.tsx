@@ -24,6 +24,7 @@ import { Expense, GroupDetails } from "../types/types";
 import { AddExpenseModal } from "../components/AddExpenseModal";
 import { ExpenseList } from "../components/ExpenseList";
 import { useExpenses } from "../hooks/useExpenses";
+import { SettleUpModal } from "../components/SettleUpModal";
 
 interface AddMemberModalProps {
   visible: boolean;
@@ -52,6 +53,7 @@ export function GroupDetailsScreen() {
   const [currentGroup, setCurrentGroup] = useState<GroupDetails>(route.params);
   const [showAddExpenseModal, setShowAddExpenseModal] = useState(false);
   const [expenseToEdit, setExpenseToEdit] = useState<Expense | undefined>();
+  const [showSettleUpModal, setShowSettleUpModal] = useState(false);
 
   const isAdmin = members.find((m) => m.id === user?.id)?.role === "admin";
 
@@ -344,7 +346,10 @@ export function GroupDetailsScreen() {
           <Text style={styles.actionText}>Add Member</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.actionButton}>
+        <TouchableOpacity
+          style={styles.actionButton}
+          onPress={() => setShowSettleUpModal(true)}
+        >
           <View style={[styles.actionIcon, { backgroundColor: "#EA4335" }]}>
             <Icon name="receipt-long" size={24} color="#fff" />
           </View>
@@ -456,6 +461,13 @@ export function GroupDetailsScreen() {
           fetchExpenses();
           setExpenseToEdit(undefined);
         }}
+      />
+      <SettleUpModal
+        visible={showSettleUpModal}
+        onClose={() => setShowSettleUpModal(false)}
+        members={members}
+        expenses={sharedExpenses}
+        userId={user?.id}
       />
     </SafeAreaView>
   );

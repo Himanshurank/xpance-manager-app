@@ -10,6 +10,8 @@ import Toast from "react-native-toast-message";
 import { GroupScreen } from "./src/screens/GroupScreen";
 import { GroupDetailsScreen } from "./src/screens/GroupDetailsScreen";
 import { AllExpensesScreen } from "./src/screens/AllExpensesScreen";
+import { ProfileScreen } from "./src/screens/ProfileScreen";
+import { AnalyticsScreen } from "./src/screens/AnalyticsScreen";
 
 export type RootStackParamList = {
   Login: undefined;
@@ -17,7 +19,10 @@ export type RootStackParamList = {
   Home: undefined;
   Group: undefined;
   GroupDetails: undefined;
-  AllExpenses: undefined;
+  Transaction: undefined;
+  Analytics: undefined;
+  Settings: undefined;
+  Profile: undefined;
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -50,11 +55,9 @@ export default function App() {
                 name="GroupDetails"
                 component={GroupDetailsScreen}
               />
-              <Stack.Screen
-                name="AllExpenses"
-                component={AllExpensesScreen}
-                options={{ headerShown: false }}
-              />
+              <Stack.Screen name="Transaction" component={AllExpensesScreen} />
+              <Stack.Screen name="Profile" component={ProfileScreen} />
+              <Stack.Screen name="Analytics" component={AnalyticsScreen} />
             </>
           )}
         </Stack.Navigator>

@@ -42,7 +42,6 @@ export const useExpenses = (groupId?: string, userId?: string) => {
       setExpensesLoading(true);
       let personalData: any[] = [];
 
-      // Modify shared expenses query based on groupId
       let { data: sharedExpenses, error: sharedError } = (await supabase
         .from("shared_expenses")
         .select(

@@ -35,21 +35,18 @@ const { width } = Dimensions.get("window");
 
 type RootStackParamList = {
   Group: undefined;
-  GroupDetails: {
-    id: string;
-    name: string;
-    icon: string;
-    color: string;
-    memberCount: number;
-  };
-  AllExpenses: undefined;
-  // add other screens here
+  GroupDetails: undefined;
+  Transaction: undefined;
+  Home: undefined;
+  Analytics: undefined;
+  Settings: undefined;
+  Profile: undefined;
 };
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
 export function HomeScreen() {
-  const { user, signOut } = useAuth();
+  const { user } = useAuth();
   const { groups, groupsLoading, fetchGroups } = useGroups(user?.id || "");
   const { allExpenses, expensesLoading, fetchExpenses } = useExpenses(
     undefined,
@@ -105,11 +102,11 @@ export function HomeScreen() {
   }, [user?.id]);
 
   const menuItems = [
-    { icon: "dashboard", label: "Dashboard" },
-    { icon: "group", label: "Groups" },
-    { icon: "account-balance-wallet", label: "Transactions" },
+    { icon: "dashboard", label: "Home" },
+    { icon: "group", label: "Group" },
+    { icon: "account-balance-wallet", label: "Transaction" },
     { icon: "pie-chart", label: "Analytics" },
-    { icon: "settings", label: "Settings" },
+    { icon: "settings", label: "Profile" },
   ];
 
   const handleEditExpense = (expense: Expense) => {
@@ -143,10 +140,15 @@ export function HomeScreen() {
             </Text>
             <Text style={styles.userEmail}>{user?.email}</Text>
           </View>
-          <TouchableOpacity style={styles.avatarContainer}>
-            <Text style={styles.avatarText}>
-              {(user?.user_metadata?.name?.[0] || "U").toUpperCase()}
-            </Text>
+          <TouchableOpacity
+            onPress={() => navigation.navigate("Profile")}
+            style={styles.avatarButton}
+          >
+            <View style={styles.avatar}>
+              <Text style={styles.avatarText}>
+                {user?.user_metadata?.name?.[0].toUpperCase()}
+              </Text>
+            </View>
           </TouchableOpacity>
         </View>
       </View>
@@ -186,9 +188,7 @@ export function HomeScreen() {
                   key={index}
                   style={styles.menuItem}
                   onPress={() => {
-                    if (item.label === "Groups") {
-                      navigation.navigate("Group");
-                    }
+                    navigation.navigate(item.label as keyof RootStackParamList);
                     toggleSidebar(false);
                   }}
                 >
@@ -197,11 +197,6 @@ export function HomeScreen() {
                 </TouchableOpacity>
               ))}
             </View>
-
-            <TouchableOpacity style={styles.logoutButton} onPress={signOut}>
-              <Icon name="logout" size={24} color="#EA4335" />
-              <Text style={styles.logoutText}>Logout</Text>
-            </TouchableOpacity>
           </Animated.View>
         </TouchableOpacity>
       </Modal>
@@ -304,7 +299,7 @@ export function HomeScreen() {
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>Recent Expenses</Text>
             <TouchableOpacity
-              onPress={() => navigation.navigate("AllExpenses")}
+              onPress={() => navigation.navigate("Transaction")}
             >
               <Text style={styles.seeAllButton}>See All</Text>
             </TouchableOpacity>
@@ -417,7 +412,7 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: "#666",
   },
-  avatarContainer: {
+  avatarButton: {
     width: 40,
     height: 40,
     borderRadius: 20,
@@ -425,8 +420,16 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
+  avatar: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: "#fff",
+    justifyContent: "center",
+    alignItems: "center",
+  },
   avatarText: {
-    color: "#fff",
+    color: "#1a1a1a",
     fontSize: 18,
     fontWeight: "600",
   },
