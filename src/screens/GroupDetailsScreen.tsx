@@ -5,12 +5,7 @@ import {
   Text,
   TouchableOpacity,
   SafeAreaView,
-  ScrollView,
-  Modal,
   ActivityIndicator,
-  TextInput,
-  KeyboardAvoidingView,
-  Platform,
 } from "react-native";
 import Icon from "react-native-vector-icons/MaterialIcons";
 import { useNavigation, useRoute } from "@react-navigation/native";
@@ -25,13 +20,8 @@ import { AddExpenseModal } from "../components/AddExpenseModal";
 import { ExpenseList } from "../components/ExpenseList";
 import { useExpenses } from "../hooks/useExpenses";
 import { SettleUpModal } from "../components/SettleUpModal";
-
-interface AddMemberModalProps {
-  visible: boolean;
-  onClose: () => void;
-  onAdd: (email: string) => Promise<void>;
-  loading: boolean;
-}
+import { AddMemberModal } from "../components/group/AddMemberModal";
+import { ShowAllMemberModal } from "./ShowAllMemberModal";
 
 export function GroupDetailsScreen() {
   const route = useRoute<any>();
@@ -85,68 +75,6 @@ export function GroupDetailsScreen() {
       </View>
     );
   }
-
-  const MembersModal = () => (
-    <Modal
-      visible={showMembersModal}
-      transparent={true}
-      animationType="fade"
-      onRequestClose={() => setShowMembersModal(false)}
-    >
-      <TouchableOpacity
-        style={styles.modalOverlay}
-        activeOpacity={1}
-        onPress={() => setShowMembersModal(false)}
-      >
-        <TouchableOpacity
-          activeOpacity={1}
-          style={styles.modalContent}
-          onPress={(e) => e.stopPropagation()}
-        >
-          <View style={styles.modalHeader}>
-            <Text style={styles.modalTitle}>Group Members</Text>
-            <TouchableOpacity
-              onPress={() => setShowMembersModal(false)}
-              style={styles.closeButton}
-            >
-              <Icon name="close" size={24} color="#666" />
-            </TouchableOpacity>
-          </View>
-
-          <ScrollView style={styles.membersList}>
-            {members.map((member) => (
-              <View key={member.id} style={styles.memberItem}>
-                <View style={styles.memberInfo}>
-                  <View style={styles.memberAvatar}>
-                    <Text style={styles.avatarText}>
-                      {member.name[0].toUpperCase()}
-                    </Text>
-                  </View>
-                  <View style={styles.memberDetails}>
-                    <Text style={styles.memberName}>{member.name}</Text>
-                    <Text style={styles.memberEmail}>{member.email}</Text>
-                  </View>
-                </View>
-                <View style={styles.memberRole}>
-                  <Text
-                    style={[
-                      styles.roleText,
-                      member.role === "admin" && styles.adminRole,
-                    ]}
-                  >
-                    {member.role}
-                  </Text>
-                  {user?.id === member.id && (
-                    <Text style={styles.youText}>(You)</Text>
-                  )}
-                </View>
-              </View>
-            ))}
-          </ScrollView>
-        </TouchableOpacity>
-      </TouchableOpacity>
-    </Modal>
-  );
 
   const handleAddMember = async (email: string) => {
     setAddingMember(true);
@@ -210,95 +138,6 @@ export function GroupDetailsScreen() {
     } finally {
       setAddingMember(false);
     }
-  };
-
-  const AddMemberModal = ({
-    visible,
-    onClose,
-    onAdd,
-    loading,
-  }: AddMemberModalProps) => {
-    const [email, setEmail] = useState("");
-
-    const handleSubmit = async () => {
-      if (!email.trim()) {
-        Toaster({
-          type: "error",
-          text1: "Error",
-          text2: "Please enter an email address",
-        });
-        return;
-      }
-      await onAdd(email.trim());
-      setEmail("");
-    };
-
-    return (
-      <Modal
-        visible={visible}
-        transparent={true}
-        animationType="fade"
-        onRequestClose={onClose}
-      >
-        <KeyboardAvoidingView
-          behavior={Platform.OS === "ios" ? "padding" : "height"}
-          style={styles.modalContainer}
-        >
-          <TouchableOpacity
-            style={styles.modalOverlay}
-            activeOpacity={1}
-            onPress={onClose}
-          >
-            <TouchableOpacity
-              activeOpacity={1}
-              style={styles.modalContent}
-              onPress={(e) => e.stopPropagation()}
-            >
-              <View style={styles.modalHeader}>
-                <Text style={styles.modalTitle}>Add New Member</Text>
-                <TouchableOpacity onPress={onClose} style={styles.closeButton}>
-                  <Icon name="close" size={24} color="#666" />
-                </TouchableOpacity>
-              </View>
-
-              <View style={styles.inputContainer}>
-                <Text style={styles.inputLabel}>Member Email</Text>
-                <TextInput
-                  style={styles.input}
-                  placeholder="Enter email address"
-                  value={email}
-                  onChangeText={setEmail}
-                  keyboardType="email-address"
-                  autoCapitalize="none"
-                  autoCorrect={false}
-                />
-              </View>
-
-              <View style={styles.modalButtons}>
-                <TouchableOpacity
-                  style={[styles.button, styles.cancelButton]}
-                  onPress={onClose}
-                  disabled={loading}
-                >
-                  <Text style={styles.cancelButtonText}>Cancel</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={[styles.button, styles.addButton]}
-                  onPress={handleSubmit}
-                  disabled={loading}
-                >
-                  {loading ? (
-                    <ActivityIndicator color="#fff" size="small" />
-                  ) : (
-                    <Text style={styles.addButtonText}>Add Member</Text>
-                  )}
-                </TouchableOpacity>
-              </View>
-            </TouchableOpacity>
-          </TouchableOpacity>
-        </KeyboardAvoidingView>
-      </Modal>
-    );
   };
 
   const handleEditExpense = (expense: Expense) => {
@@ -449,7 +288,11 @@ export function GroupDetailsScreen() {
         </View>
       </View>
 
-      <MembersModal />
+      <ShowAllMemberModal
+        showMembersModal={showMembersModal}
+        setShowMembersModal={setShowMembersModal}
+        members={members}
+      />
       <AddMemberModal
         visible={showAddMemberModal}
         onClose={() => setShowAddMemberModal(false)}
@@ -574,25 +417,7 @@ const styles = StyleSheet.create({
     color: "#1a73e8",
     fontWeight: "500",
   },
-  emptyState: {
-    alignItems: "center",
-    padding: 32,
-  },
-  emptyStateText: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: "#1a1a1a",
-    marginTop: 16,
-    marginBottom: 8,
-  },
-  emptyStateSubText: {
-    fontSize: 14,
-    color: "#666",
-    textAlign: "center",
-  },
-  modalContainer: {
-    flex: 1,
-  },
+
   modalOverlay: {
     flex: 1,
     backgroundColor: "rgba(0, 0, 0, 0.5)",
@@ -694,53 +519,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     backgroundColor: "#fff",
   },
-  inputContainer: {
-    marginBottom: 20,
-  },
-  inputLabel: {
-    fontSize: 16,
-    fontWeight: "500",
-    color: "#1a1a1a",
-    marginBottom: 8,
-  },
-  input: {
-    backgroundColor: "#f5f5f5",
-    padding: 16,
-    borderRadius: 8,
-    fontSize: 16,
-    borderWidth: 1,
-    borderColor: "#e0e0e0",
-  },
-  modalButtons: {
-    flexDirection: "row",
-    justifyContent: "flex-end",
-    gap: 12,
-    marginTop: 20,
-    paddingBottom: Platform.OS === "ios" ? 20 : 0,
-  },
-  button: {
-    paddingHorizontal: 24,
-    paddingVertical: 12,
-    borderRadius: 8,
-    minWidth: 100,
-    alignItems: "center",
-  },
-  cancelButton: {
-    backgroundColor: "#f5f5f5",
-  },
-  addButton: {
-    backgroundColor: "#1a73e8",
-  },
-  cancelButtonText: {
-    color: "#666",
-    fontSize: 16,
-    fontWeight: "500",
-  },
-  addButtonText: {
-    color: "#fff",
-    fontSize: 16,
-    fontWeight: "600",
-  },
+
   expenseSummary: {
     flexDirection: "row",
     backgroundColor: "#f8f9fa",

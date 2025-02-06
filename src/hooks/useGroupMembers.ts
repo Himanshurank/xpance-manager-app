@@ -1,13 +1,7 @@
 import { useState, useEffect } from "react";
 import { supabase } from "../lib/supabase";
 import Toaster from "../utils/toasterConfig";
-
-interface Member {
-  id: string;
-  email: string;
-  name: string;
-  role: "admin" | "member";
-}
+import { Member } from "../types/types";
 
 export function useGroupMembers(groupId: string) {
   const [members, setMembers] = useState<Member[]>([]);

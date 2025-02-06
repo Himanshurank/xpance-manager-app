@@ -10,6 +10,12 @@ export interface Group {
   member_count?: number;
 }
 
+export interface Member {
+  id: string;
+  email: string;
+  name: string;
+  role: "admin" | "member";
+}
 export interface GroupMember {
   id: string;
   group_id: string;
