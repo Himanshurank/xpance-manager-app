@@ -31,6 +31,7 @@ export interface Expense {
   description: string;
   amount: number;
   category: {
+    id: string;
     name: string;
     icon: string;
     color: string;

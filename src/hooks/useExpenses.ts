@@ -2,7 +2,7 @@ import { useState } from "react";
 import { supabase } from "../lib/supabase";
 import { Expense } from "../types/types";
 import Toaster from "../utils/toasterConfig";
-
+import { User } from "@supabase/supabase-js";
 interface ExpenseResponse {
   id: string;
   description: string;
@@ -10,6 +10,7 @@ interface ExpenseResponse {
   created_at: string;
   paid_by: string;
   category: {
+    id: string;
     name: string;
     icon: string;
     color: string;
@@ -24,6 +25,7 @@ interface PersonalExpenseResponse {
   created_at: string;
   user_id: string;
   category: {
+    id: string;
     name: string;
     icon: string;
     color: string;
@@ -51,6 +53,7 @@ export const useExpenses = (groupId?: string, userId?: string) => {
           created_at,
           paid_by,
           category:expense_categories!inner (
+            id,
             name,
             icon,
             color
@@ -75,6 +78,7 @@ export const useExpenses = (groupId?: string, userId?: string) => {
             created_at,
             user_id,
             category:expense_categories!inner (
+              id,
               name,
               icon,
               color
@@ -102,7 +106,10 @@ export const useExpenses = (groupId?: string, userId?: string) => {
       if (userError) throw userError;
 
       const userMap = Object.fromEntries(
-        userData?.map((user) => [user.id, { name: user.name }]) || []
+        userData?.map((user) => [
+          user.id,
+          { name: user.id === userId ? "You" : user.name },
+        ]) || []
       );
 
       const transformedShared = sharedExpenses?.map(

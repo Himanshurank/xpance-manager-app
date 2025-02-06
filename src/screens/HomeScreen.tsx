@@ -27,6 +27,8 @@ import { useExpenses } from "../hooks/useExpenses";
 import { useIncome } from "../hooks/useIncome";
 import { AddIncomeModal } from "../components/AddIncomeModal";
 import { AddExpenseModal } from "../components/AddExpenseModal";
+import Toaster from "../utils/toasterConfig";
+import { Expense } from "../types/types";
 
 const { StatusBarManager } = NativeModules;
 const { width } = Dimensions.get("window");
@@ -40,6 +42,7 @@ type RootStackParamList = {
     color: string;
     memberCount: number;
   };
+  AllExpenses: undefined;
   // add other screens here
 };
 
@@ -64,6 +67,7 @@ export function HomeScreen() {
   const [isCreateGroupModal, setIsCreateGroupModal] = useState(false);
   const [showAddIncomeModal, setShowAddIncomeModal] = useState(false);
   const [showAddExpenseModal, setShowAddExpenseModal] = useState(false);
+  const [expenseToEdit, setExpenseToEdit] = useState<Expense | undefined>();
   const slideAnim = useRef(new Animated.Value(-width)).current;
   const navigation = useNavigation<NavigationProp>();
 
@@ -107,6 +111,19 @@ export function HomeScreen() {
     { icon: "pie-chart", label: "Analytics" },
     { icon: "settings", label: "Settings" },
   ];
+
+  const handleEditExpense = (expense: Expense) => {
+    if (expense.paidById !== user?.id) {
+      Toaster({
+        type: "error",
+        text1: "Error",
+        text2: "You can only edit your own expenses",
+      });
+      return;
+    }
+    setExpenseToEdit(expense);
+    setShowAddExpenseModal(true);
+  };
 
   return (
     <SafeAreaView style={styles.container}>
@@ -286,11 +303,17 @@ export function HomeScreen() {
         >
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>Recent Expenses</Text>
-            <TouchableOpacity>
+            <TouchableOpacity
+              onPress={() => navigation.navigate("AllExpenses")}
+            >
               <Text style={styles.seeAllButton}>See All</Text>
             </TouchableOpacity>
           </View>
-          <ExpenseList expenses={allExpenses} isLoading={expensesLoading} />
+          <ExpenseList
+            expenses={allExpenses}
+            isLoading={expensesLoading}
+            onEditExpense={handleEditExpense}
+          />
         </PlatformView>
 
         <View style={styles.groupsSection}>
@@ -334,10 +357,15 @@ export function HomeScreen() {
 
       <AddExpenseModal
         visible={showAddExpenseModal}
-        onClose={() => setShowAddExpenseModal(false)}
+        expense={expenseToEdit}
+        onClose={() => {
+          setShowAddExpenseModal(false);
+          setExpenseToEdit(undefined);
+        }}
         onSuccess={() => {
           fetchExpenses();
           fetchIncome();
+          setExpenseToEdit(undefined);
         }}
       />
     </SafeAreaView>

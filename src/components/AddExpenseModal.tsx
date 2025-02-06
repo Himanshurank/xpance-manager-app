@@ -15,29 +15,14 @@ import Icon from "react-native-vector-icons/MaterialIcons";
 import { supabase } from "../lib/supabase";
 import Toaster from "../utils/toasterConfig";
 import { useAuth } from "../hooks/useAuth";
-
-interface Member {
-  id: string;
-  email: string;
-  name: string;
-  role: "admin" | "member";
-}
-
-interface ExpenseData {
-  amount: number;
-  category_id: string;
-  description: string;
-  paid_by: string | undefined;
-  group_id?: string;
-  split_type?: "equal" | "percentage" | "custom";
-}
+import { Expense } from "../types/types";
 
 interface AddExpenseModalProps {
   visible: boolean;
   onClose: () => void;
   groupId?: string;
   onSuccess?: () => void;
-  members?: Member[];
+  expense?: Expense;
 }
 
 export function AddExpenseModal({
@@ -45,12 +30,14 @@ export function AddExpenseModal({
   onClose,
   groupId,
   onSuccess,
-  members,
+  expense,
 }: AddExpenseModalProps) {
   const { user } = useAuth();
-  const [amount, setAmount] = useState("");
-  const [description, setDescription] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [amount, setAmount] = useState(expense?.amount.toString() || "");
+  const [description, setDescription] = useState(expense?.description || "");
+  const [selectedCategory, setSelectedCategory] = useState<string>(
+    expense?.category?.id || ""
+  );
   const [splitType, setSplitType] = useState<"equal" | "percentage" | "custom">(
     "equal"
   );
@@ -60,6 +47,18 @@ export function AddExpenseModal({
   useEffect(() => {
     fetchCategories();
   }, []);
+
+  useEffect(() => {
+    if (visible && expense) {
+      setDescription(expense.description);
+      setAmount(expense.amount.toString());
+      setSelectedCategory(expense.category.id);
+    } else if (!visible) {
+      setDescription("");
+      setAmount("");
+      setSelectedCategory("");
+    }
+  }, [visible, expense]);
 
   const fetchCategories = async () => {
     const { data, error } = await supabase
@@ -87,73 +86,41 @@ export function AddExpenseModal({
 
     setLoading(true);
     try {
-      // If no groupId, it's a personal expense
-      if (!groupId) {
-        const { error: personalExpenseError } = await supabase
-          .from("personal_expenses")
-          .insert([
-            {
-              amount: parseFloat(amount),
-              category_id: selectedCategory,
-              description,
-              user_id: user?.id,
-            },
-          ]);
+      const expenseData = {
+        description,
+        amount: parseFloat(amount),
+        category_id: selectedCategory,
+        paid_by: user?.id,
+        group_id: groupId,
+      };
 
-        if (personalExpenseError) throw personalExpenseError;
+      if (expense) {
+        // Update existing expense
+        const { error } = await supabase
+          .from(groupId ? "shared_expenses" : "personal_expenses")
+          .update(expenseData)
+          .eq("id", expense.id);
+
+        if (error) throw error;
+        Toaster({ type: "success", text1: "Expense updated successfully" });
       } else {
-        // Group expense logic
-        const expenseData: ExpenseData = {
-          amount: parseFloat(amount),
-          category_id: selectedCategory,
-          description,
-          paid_by: user?.id,
-          group_id: groupId,
-          split_type: splitType,
-        };
+        // Create new expense
+        const { error } = await supabase
+          .from(groupId ? "shared_expenses" : "personal_expenses")
+          .insert([expenseData]);
 
-        const { data: expense, error: expenseError } = await supabase
-          .from("shared_expenses")
-          .insert([expenseData])
-          .select()
-          .single();
-
-        if (expenseError) throw expenseError;
-
-        // Handle group expense participants
-        if (members) {
-          const shareAmount =
-            splitType === "equal" ? parseFloat(amount) / members.length : 0;
-          const participantsData = members.map((member) => ({
-            expense_id: expense.id,
-            user_id: member.id,
-            share_amount: shareAmount,
-            share_percentage:
-              splitType === "equal" ? 100 / members.length : null,
-          }));
-
-          const { error: participantsError } = await supabase
-            .from("expense_participants")
-            .insert(participantsData);
-
-          if (participantsError) throw participantsError;
-        }
+        if (error) throw error;
+        Toaster({ type: "success", text1: "Expense added successfully" });
       }
-
-      Toaster({
-        type: "success",
-        text1: "Success",
-        text2: "Expense added successfully",
-      });
 
       onSuccess?.();
       onClose();
-    } catch (error: any) {
-      console.error("Error adding expense:", error);
+    } catch (error) {
+      console.error("Error saving expense:", error);
       Toaster({
         type: "error",
         text1: "Error",
-        text2: error.message || "Failed to add expense",
+        text2: "Failed to save expense",
       });
     } finally {
       setLoading(false);

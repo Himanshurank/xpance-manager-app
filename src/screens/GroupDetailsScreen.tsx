@@ -51,6 +51,7 @@ export function GroupDetailsScreen() {
   const [showSettingsModal, setShowSettingsModal] = useState(false);
   const [currentGroup, setCurrentGroup] = useState<GroupDetails>(route.params);
   const [showAddExpenseModal, setShowAddExpenseModal] = useState(false);
+  const [expenseToEdit, setExpenseToEdit] = useState<Expense | undefined>();
 
   const isAdmin = members.find((m) => m.id === user?.id)?.role === "admin";
 
@@ -282,6 +283,19 @@ export function GroupDetailsScreen() {
     );
   };
 
+  const handleEditExpense = (expense: Expense) => {
+    if (expense.paidById !== user?.id) {
+      Toaster({
+        type: "error",
+        text1: "Error",
+        text2: "You can only edit your own expenses",
+      });
+      return;
+    }
+    setExpenseToEdit(expense);
+    setShowAddExpenseModal(true);
+  };
+
   return (
     <SafeAreaView style={styles.container}>
       {/* Header */}
@@ -406,7 +420,11 @@ export function GroupDetailsScreen() {
               <Text style={styles.addExpenseText}>Add Expense</Text>
             </TouchableOpacity>
           </View>
-          <ExpenseList expenses={sharedExpenses} isLoading={expensesLoading} />
+          <ExpenseList
+            expenses={sharedExpenses}
+            isLoading={expensesLoading}
+            onEditExpense={handleEditExpense}
+          />
         </View>
       </View>
 
@@ -427,12 +445,16 @@ export function GroupDetailsScreen() {
       />
       <AddExpenseModal
         visible={showAddExpenseModal}
-        onClose={() => setShowAddExpenseModal(false)}
         groupId={groupId}
-        members={members}
+        expense={expenseToEdit}
+        onClose={() => {
+          setShowAddExpenseModal(false);
+          setExpenseToEdit(undefined);
+        }}
         onSuccess={() => {
           fetchMembers();
           fetchExpenses();
+          setExpenseToEdit(undefined);
         }}
       />
     </SafeAreaView>

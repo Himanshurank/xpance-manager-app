@@ -1,5 +1,11 @@
 import React from "react";
-import { View, Text, StyleSheet, ScrollView } from "react-native";
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  TouchableOpacity,
+} from "react-native";
 import Icon from "react-native-vector-icons/MaterialIcons";
 import { formatDistanceToNow } from "date-fns";
 import { Expense } from "../types/types";
@@ -7,9 +13,14 @@ import { Expense } from "../types/types";
 interface ExpenseListProps {
   expenses: Expense[];
   isLoading: boolean;
+  onEditExpense?: (expense: Expense) => void;
 }
 
-export function ExpenseList({ expenses, isLoading }: ExpenseListProps) {
+export function ExpenseList({
+  expenses,
+  isLoading,
+  onEditExpense,
+}: ExpenseListProps) {
   if (isLoading) {
     return (
       <View style={styles.loadingContainer}>
@@ -30,7 +41,11 @@ export function ExpenseList({ expenses, isLoading }: ExpenseListProps) {
   return (
     <ScrollView style={styles.container}>
       {expenses.map((expense) => (
-        <View key={expense.id} style={styles.expenseItem}>
+        <TouchableOpacity
+          key={expense.id}
+          style={styles.expenseItem}
+          onPress={() => onEditExpense?.(expense)}
+        >
           <View style={styles.categoryIcon}>
             <Icon
               name={expense.category.icon}
@@ -46,7 +61,7 @@ export function ExpenseList({ expenses, isLoading }: ExpenseListProps) {
             </Text>
           </View>
           <Text style={styles.amount}>₹{expense.amount.toFixed(2)}</Text>
-        </View>
+        </TouchableOpacity>
       ))}
     </ScrollView>
   );
@@ -77,7 +92,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     padding: 16,
     borderBottomWidth: 1,
-    borderBottomColor: "#eee",
+    borderBottomColor: "#f0f0f0",
   },
   categoryIcon: {
     width: 40,
@@ -105,5 +120,9 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "600",
     color: "#1a1a1a",
+  },
+  editButton: {
+    padding: 8,
+    marginLeft: 8,
   },
 });

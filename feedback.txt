@@ -1,0 +1,5 @@
+1. Team members, including me, consistently give their best effort. However, in some cases—such as the recent release of the notification settings—some bugs were introduced in the staging release. This happened because some team members, including myself, lacked proper knowledge of the codebase.
+
+2. When an issue arises for me or someone else, and I realize it is a problem, I hesitate to bring it up because I feel it might create a negative impression of me. As a result, I struggle to express my opinions properly in such situations.
+
+3. 
