@@ -12,7 +12,9 @@ import { useNavigation } from "@react-navigation/native";
 import { useAuth } from "../hooks/useAuth";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { RootStackParamList } from "../types/types";
-
+import { uploadProfilePhoto } from "../utils/profileUtils";
+import Toaster from "../utils/toasterConfig";
+import * as ImagePicker from "expo-image-picker";
 type ProfileScreenNavigationProp =
   NativeStackNavigationProp<RootStackParamList>;
 
@@ -48,6 +50,35 @@ export function ProfileScreen() {
   const navigation = useNavigation<ProfileScreenNavigationProp>();
   const { user, signOut } = useAuth();
 
+  const handleProfilePhotoUpload = async () => {
+    try {
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 0.5,
+      });
+
+      if (!result.canceled) {
+        const url = await uploadProfilePhoto(
+          user?.id || "",
+          result.assets[0].uri
+        );
+        Toaster({
+          type: "success",
+          text1: "Success",
+          text2: "Profile photo updated!",
+        });
+      }
+    } catch (error) {
+      Toaster({
+        type: "error",
+        text1: "Error",
+        text2: "Failed to update profile photo",
+      });
+    }
+  };
+
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
@@ -65,7 +96,10 @@ export function ProfileScreen() {
 
       <ScrollView style={styles.content}>
         <View style={styles.profileSection}>
-          <View style={styles.avatarContainer}>
+          <TouchableOpacity
+            style={styles.avatarContainer}
+            onPress={handleProfilePhotoUpload}
+          >
             <View style={styles.avatar}>
               <Text style={styles.avatarText}>
                 {user?.user_metadata?.name?.[0].toUpperCase()}
@@ -74,7 +108,7 @@ export function ProfileScreen() {
             <TouchableOpacity style={styles.changePhotoButton}>
               <Icon name="camera-alt" size={20} color="#fff" />
             </TouchableOpacity>
-          </View>
+          </TouchableOpacity>
           <Text style={styles.name}>{user?.user_metadata?.name}</Text>
           <Text style={styles.email}>{user?.email}</Text>
         </View>

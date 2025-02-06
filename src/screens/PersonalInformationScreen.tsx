@@ -12,12 +12,15 @@ import {
   Platform,
   Animated,
   Dimensions,
+  Image,
 } from "react-native";
 import Icon from "react-native-vector-icons/MaterialIcons";
 import { useNavigation } from "@react-navigation/native";
 import { useAuth } from "../hooks/useAuth";
 import { supabase } from "../lib/supabase";
 import Toaster from "../utils/toasterConfig";
+import { uploadProfilePhoto, deleteProfilePhoto } from "../utils/profileUtils";
+import * as ImagePicker from "expo-image-picker";
 
 const { height } = Dimensions.get("window");
 
@@ -107,6 +110,50 @@ export function PersonalInformationScreen() {
     }
   };
 
+  const handleProfilePhotoUpload = async () => {
+    try {
+      // Request permission
+      const permissionResult =
+        await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (!permissionResult.granted) {
+        Toaster({
+          type: "error",
+          text1: "Error",
+          text2: "Permission to access camera roll is required!",
+        });
+        return;
+      }
+
+      // Pick image
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 0.5,
+      });
+
+      if (!result.canceled) {
+        const url = await uploadProfilePhoto(
+          user?.id || "",
+          result.assets[0].uri
+        );
+        if (url) {
+          Toaster({
+            type: "success",
+            text1: "Success",
+            text2: "Profile photo updated!",
+          });
+        }
+      }
+    } catch (error) {
+      Toaster({
+        type: "error",
+        text1: "Error",
+        text2: "Failed to update profile photo",
+      });
+    }
+  };
+
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
@@ -119,6 +166,24 @@ export function PersonalInformationScreen() {
         <Text style={styles.title}>Personal Information</Text>
         <TouchableOpacity onPress={handleSave} style={styles.editButton}>
           <Text style={styles.editButtonText}>Save</Text>
+        </TouchableOpacity>
+      </View>
+
+      <View style={styles.profilePhotoSection}>
+        <TouchableOpacity onPress={handleProfilePhotoUpload}>
+          {user?.user_metadata?.avatar_url ? (
+            <Image
+              source={{ uri: user.user_metadata.avatar_url }}
+              style={styles.profilePhoto}
+            />
+          ) : (
+            <View style={styles.profilePhotoPlaceholder}>
+              <Icon name="person" size={40} color="#666" />
+            </View>
+          )}
+          <View style={styles.editPhotoButton}>
+            <Icon name="camera-alt" size={16} color="#fff" />
+          </View>
         </TouchableOpacity>
       </View>
 
@@ -407,5 +472,37 @@ const styles = StyleSheet.create({
     color: "#1a1a1a",
     flex: 1,
     marginLeft: 12,
+  },
+  profilePhotoSection: {
+    alignItems: "center",
+    padding: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: "#f0f0f0",
+  },
+  profilePhoto: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+  },
+  profilePhotoPlaceholder: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    backgroundColor: "#f0f0f0",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  editPhotoButton: {
+    position: "absolute",
+    right: 0,
+    bottom: 0,
+    backgroundColor: "#1a73e8",
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    justifyContent: "center",
+    alignItems: "center",
+    borderWidth: 2,
+    borderColor: "#fff",
   },
 });
