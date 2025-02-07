@@ -5,6 +5,7 @@ import {
   View,
   Text,
   StyleSheet,
+  Image,
 } from "react-native";
 import Icon from "react-native-vector-icons/MaterialIcons";
 import { Member } from "../../types/types";
@@ -50,9 +51,16 @@ export const ShowAllMemberModal = (props: ShowAllMemberModalProps) => {
               <View key={member.id} style={styles.memberItem}>
                 <View style={styles.memberInfo}>
                   <View style={styles.memberAvatar}>
-                    <Text style={styles.avatarText}>
-                      {member.name[0].toUpperCase()}
-                    </Text>
+                    {member.avatar_url ? (
+                      <Image
+                        source={{ uri: member.avatar_url }}
+                        style={styles.avatarImage}
+                      />
+                    ) : (
+                      <Text style={styles.avatarText}>
+                        {member.name[0].toUpperCase()}
+                      </Text>
+                    )}
                   </View>
                   <View style={styles.memberDetails}>
                     <Text style={styles.memberName}>{member.name}</Text>
@@ -168,5 +176,10 @@ const styles = StyleSheet.create({
   },
   closeButton: {
     padding: 8,
+  },
+  avatarImage: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
   },
 });

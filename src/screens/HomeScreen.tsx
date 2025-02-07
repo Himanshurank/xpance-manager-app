@@ -12,6 +12,7 @@ import {
   Modal,
   Animated,
   Dimensions,
+  Image,
 } from "react-native";
 import { PlatformView } from "../components/PlatformView";
 import { useAuth } from "../hooks/useAuth";
@@ -161,11 +162,18 @@ export function HomeScreen() {
             onPress={() => navigation.navigate("Profile")}
             style={styles.avatarButton}
           >
-            <View style={styles.avatar}>
-              <Text style={styles.avatarText}>
-                {user?.user_metadata?.name?.[0].toUpperCase()}
-              </Text>
-            </View>
+            {user?.user_metadata?.avatar_url ? (
+              <Image
+                source={{ uri: user.user_metadata.avatar_url }}
+                style={styles.avatar}
+              />
+            ) : (
+              <View style={styles.avatar}>
+                <Text style={styles.avatarText}>
+                  {user?.user_metadata?.name?.[0].toUpperCase()}
+                </Text>
+              </View>
+            )}
           </TouchableOpacity>
         </View>
       </View>

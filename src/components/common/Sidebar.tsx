@@ -8,6 +8,7 @@ import {
   Animated,
   Platform,
   StatusBar,
+  Image,
 } from "react-native";
 import Icon from "react-native-vector-icons/MaterialIcons";
 import { RootStackParamList } from "../../types/types";
@@ -75,9 +76,16 @@ export const Sidebar = ({ isOpen, onClose, slideAnim, user }: SidebarProps) => {
       <View style={styles.sidebarContent}>
         <View style={styles.userSection}>
           <View style={styles.userAvatar}>
-            <Text style={styles.avatarText}>
-              {user?.user_metadata?.name?.[0].toUpperCase()}
-            </Text>
+            {user?.user_metadata?.avatar_url ? (
+              <Image
+                source={{ uri: user.user_metadata.avatar_url }}
+                style={styles.avatar}
+              />
+            ) : (
+              <Text style={styles.avatarText}>
+                {user?.user_metadata?.name?.[0].toUpperCase()}
+              </Text>
+            )}
           </View>
           <View style={styles.userInfo}>
             <Text style={styles.userName}>
@@ -216,5 +224,10 @@ const styles = StyleSheet.create({
   versionText: {
     fontSize: 12,
     color: "#666",
+  },
+  avatar: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
   },
 });

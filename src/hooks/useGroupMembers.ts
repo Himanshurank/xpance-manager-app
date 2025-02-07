@@ -11,7 +11,7 @@ export function useGroupMembers(groupId: string) {
     try {
       const { data: memberData, error: memberError } = await supabase
         .from("group_members")
-        .select("user_id, role")
+        .select("user_id, role, avatar_url")
         .eq("group_id", groupId);
 
       if (memberError) throw memberError;
@@ -36,6 +36,7 @@ export function useGroupMembers(groupId: string) {
           email: user?.email || "",
           name: user?.name || "Unknown",
           role: member.role,
+          avatar_url: member.avatar_url || null,
         };
       });
 

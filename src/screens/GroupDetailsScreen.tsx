@@ -166,12 +166,18 @@ export function GroupDetailsScreen() {
           </View>
           {members.slice(0, 3).map((member) => (
             <View key={member.id} style={styles.memberPreview}>
-              <Image
-                source={{
-                  uri: member.avatar_url || "https://via.placeholder.com/40",
-                }}
-                style={styles.memberAvatar}
-              />
+              {member.avatar_url ? (
+                <Image
+                  source={{ uri: member.avatar_url }}
+                  style={styles.memberAvatar}
+                />
+              ) : (
+                <View style={styles.memberAvatar}>
+                  <Text style={styles.memberAvatarText}>
+                    {member.name[0].toUpperCase()}
+                  </Text>
+                </View>
+              )}
               <Text style={styles.memberPreviewName}>{member.name}</Text>
             </View>
           ))}
@@ -310,6 +316,9 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
+    backgroundColor: "#1a73e8",
+    justifyContent: "center",
+    alignItems: "center",
   },
   avatar: {
     width: 100,
@@ -370,5 +379,10 @@ const styles = StyleSheet.create({
     marginLeft: 4,
     fontSize: 14,
     fontWeight: "500",
+  },
+  memberAvatarText: {
+    color: "#fff",
+    fontSize: 16,
+    fontWeight: "600",
   },
 });
