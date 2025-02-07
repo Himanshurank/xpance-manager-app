@@ -1,4 +1,5 @@
 import { supabase } from "../lib/supabase";
+import * as FileSystem from "expo-file-system";
 
 export const uploadProfilePhoto = async (userId: string, photoUri: string) => {
   try {
@@ -7,18 +8,19 @@ export const uploadProfilePhoto = async (userId: string, photoUri: string) => {
       throw new Error("Missing required parameters");
     }
 
+    // Read file as base64
+    const base64 = await FileSystem.readAsStringAsync(photoUri, {
+      encoding: FileSystem.EncodingType.Base64,
+    });
+
     // Generate unique filename
     const filename = `${userId}-${Date.now()}.jpg`;
     const filePath = `${userId}/${filename}`;
 
-    // Convert URI to Blob for React Native
-    const response = await fetch(photoUri);
-    const blob = await response.blob();
-
     // Upload to Supabase storage
     const { data, error } = await supabase.storage
       .from("profile_photos")
-      .upload(filePath, blob, {
+      .upload(filePath, decode(base64), {
         contentType: "image/jpeg",
         upsert: true,
       });
@@ -30,7 +32,7 @@ export const uploadProfilePhoto = async (userId: string, photoUri: string) => {
       data: { publicUrl },
     } = supabase.storage.from("profile_photos").getPublicUrl(filePath);
 
-    // Update user's avatar_url
+    // Update user metadata
     await supabase.auth.updateUser({
       data: { avatar_url: publicUrl },
     });
@@ -41,6 +43,16 @@ export const uploadProfilePhoto = async (userId: string, photoUri: string) => {
     throw error;
   }
 };
+
+// Helper function to decode base64
+function decode(base64: string) {
+  const byteCharacters = atob(base64);
+  const byteArrays = [];
+  for (let i = 0; i < byteCharacters.length; i++) {
+    byteArrays.push(byteCharacters.charCodeAt(i));
+  }
+  return new Uint8Array(byteArrays);
+}
 
 export const deleteProfilePhoto = async (userId: string, photoUrl: string) => {
   try {
