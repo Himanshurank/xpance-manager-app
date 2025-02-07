@@ -9,8 +9,9 @@ import {
 } from "react-native";
 import Icon from "react-native-vector-icons/MaterialIcons";
 import { useNavigation } from "@react-navigation/native";
-import { useAppSelector } from "../store/user/userStore";
+import { useAppSelector, useAppDispatch } from "../store/user/userStore";
 import { supabase } from "../lib/supabase";
+import { updateUserMetadata } from "../store/user/slices/authSlice";
 
 const CustomToggle = ({
   value,
@@ -38,6 +39,7 @@ const CustomToggle = ({
 export function NotificationScreen() {
   const navigation = useNavigation();
   const { user } = useAppSelector((state) => state.auth);
+  const dispatch = useAppDispatch();
   const [settings, setSettings] = useState({
     pushEnabled: true,
     emailEnabled: true,
@@ -51,17 +53,15 @@ export function NotificationScreen() {
     try {
       setSettings((prev) => ({ ...prev, [key]: value }));
 
-      // Update in Supabase
-      const { error } = await supabase.auth.updateUser({
-        data: {
+      // Update both store and Supabase
+      await dispatch(
+        updateUserMetadata({
           notification_settings: {
             ...settings,
             [key]: value,
           },
-        },
-      });
-
-      if (error) throw error;
+        })
+      ).unwrap();
     } catch (error) {
       console.error("Error updating notification settings:", error);
     }

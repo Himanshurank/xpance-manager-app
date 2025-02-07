@@ -8,6 +8,7 @@ interface AuthState {
   session: Session | null;
   loading: boolean;
   error: string | null;
+  hasShownWelcome: boolean;
 }
 
 const initialState: AuthState = {
@@ -15,6 +16,7 @@ const initialState: AuthState = {
   session: null,
   loading: true,
   error: null,
+  hasShownWelcome: false,
 };
 
 export const initializeAuth = createAsyncThunk("auth/initialize", async () => {
@@ -67,28 +69,45 @@ export const signOut = createAsyncThunk("auth/signOut", async () => {
 
 export const updateUserMetadata = createAsyncThunk(
   "auth/updateUserMetadata",
-  async (metadata: any) => {
+  async (metadata: any, { dispatch }) => {
     const { data, error } = await supabase.auth.updateUser({
       data: metadata,
     });
     if (error) throw error;
+
+    dispatch(updateUser(metadata));
     return data.user;
   }
 );
 
-const authSlice = createSlice({
+export const authSlice = createSlice({
   name: "auth",
   initialState,
   reducers: {
     setSession: (state, action) => {
       state.session = action.payload;
       state.user = action.payload?.user ?? null;
-      if (action.payload?.user) {
+      state.loading = false;
+    },
+    updateUser: (state, action) => {
+      if (state.user) {
+        state.user = {
+          ...state.user,
+          user_metadata: {
+            ...state.user.user_metadata,
+            ...action.payload,
+          },
+        };
+      }
+    },
+    showWelcomeMessage: (state) => {
+      if (!state.hasShownWelcome && state.user) {
         Toaster({
           type: "success",
           text1: "Welcome",
-          text2: `Hello, ${action.payload.user.user_metadata.name || "User"}!`,
+          text2: `Hello, ${state.user.user_metadata.name || "User"}!`,
         });
+        state.hasShownWelcome = true;
       }
     },
   },
@@ -96,13 +115,11 @@ const authSlice = createSlice({
     builder
       .addCase(initializeAuth.pending, (state) => {
         state.loading = true;
-        state.error = null;
       })
       .addCase(initializeAuth.fulfilled, (state, action) => {
         state.session = action.payload;
         state.user = action.payload?.user ?? null;
         state.loading = false;
-        state.error = null;
       })
       .addCase(initializeAuth.rejected, (state, action) => {
         state.loading = false;
@@ -151,5 +168,5 @@ const authSlice = createSlice({
   },
 });
 
-export const { setSession } = authSlice.actions;
+export const { setSession, updateUser, showWelcomeMessage } = authSlice.actions;
 export default authSlice.reducer;

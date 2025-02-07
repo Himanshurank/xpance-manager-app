@@ -20,7 +20,8 @@ import { HelpSupportScreen } from "./src/screens/HelpSupportScreen";
 import { store } from "./src/store/user/userStore";
 import { Provider } from "react-redux";
 import { useAppDispatch, useAppSelector } from "./src/store/user/userStore";
-import { initializeAuth } from "./src/store/user/slices/authSlice";
+import { initializeAuth, setSession } from "./src/store/user/slices/authSlice";
+import { supabase } from "./src/lib/supabase";
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -30,7 +31,15 @@ function AppContent() {
 
   useEffect(() => {
     dispatch(initializeAuth());
-  }, [dispatch]);
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      dispatch(setSession(session));
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
 
   if (loading) {
     return (

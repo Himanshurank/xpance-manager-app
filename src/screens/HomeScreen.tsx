@@ -32,7 +32,8 @@ import Toaster from "../utils/toasterConfig";
 import { Expense, RootStackParamList } from "../types/types";
 import { Sidebar } from "../components/common/Sidebar";
 import { User } from "@supabase/supabase-js";
-import { useAppSelector } from "../store/user/userStore";
+import { useAppSelector, useAppDispatch } from "../store/user/userStore";
+import { showWelcomeMessage } from "../store/user/slices/authSlice";
 
 const { StatusBarManager } = NativeModules;
 const { width } = Dimensions.get("window");
@@ -40,6 +41,7 @@ const { width } = Dimensions.get("window");
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
 export function HomeScreen() {
+  const dispatch = useAppDispatch();
   const { user, loading: authLoading } = useAppSelector((state) => state.auth);
   const { groups, groupsLoading, fetchGroups } = useGroups(user?.id || "");
   const { allExpenses, expensesLoading, fetchExpenses } = useExpenses(
@@ -91,6 +93,10 @@ export function HomeScreen() {
       fetchIncome();
     }
   }, [user?.id]);
+
+  useEffect(() => {
+    dispatch(showWelcomeMessage());
+  }, []);
 
   const handleEditExpense = (expense: Expense) => {
     if (expense.paidById !== user?.id) {
