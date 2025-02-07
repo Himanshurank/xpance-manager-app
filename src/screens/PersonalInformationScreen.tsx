@@ -16,7 +16,7 @@ import {
 } from "react-native";
 import Icon from "react-native-vector-icons/MaterialIcons";
 import { useNavigation } from "@react-navigation/native";
-import { useAppSelector } from "../store/user/userStore";
+import { useAppSelector } from "../store/store";
 import { supabase } from "../lib/supabase";
 import Toaster from "../utils/toasterConfig";
 import { uploadProfilePhoto, deleteProfilePhoto } from "../utils/profileUtils";

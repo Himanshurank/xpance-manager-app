@@ -17,10 +17,10 @@ import { RootStackParamList } from "./src/types/types";
 import { SecurityScreen } from "./src/screens/SecurityScreen";
 import { PaymentMethodsScreen } from "./src/screens/PaymentMethodsScreen";
 import { HelpSupportScreen } from "./src/screens/HelpSupportScreen";
-import { store } from "./src/store/user/userStore";
+import { store } from "./src/store/store";
 import { Provider } from "react-redux";
-import { useAppDispatch, useAppSelector } from "./src/store/user/userStore";
-import { initializeAuth, setSession } from "./src/store/user/slices/authSlice";
+import { useAppDispatch, useAppSelector } from "./src/store/store";
+import { initializeAuth, setSession } from "./src/store/slices/authSlice";
 import { supabase } from "./src/lib/supabase";
 
 const Stack = createNativeStackNavigator<RootStackParamList>();

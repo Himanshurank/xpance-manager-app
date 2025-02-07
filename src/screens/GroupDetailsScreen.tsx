@@ -24,14 +24,20 @@ import { AddMemberModal } from "../components/group/AddMemberModal";
 import { ShowAllMemberModal } from "../components/group/ShowAllMemberModal";
 import { GroupHeader } from "../components/group/GroupHeader";
 import { QuickActions } from "../components/group/QuickActions";
-import { useAppSelector } from "../store/user/userStore";
+import { useAppSelector, useAppDispatch } from "../store/store";
+import { fetchGroups, selectGroupById } from "../store/slices/groupSlice";
 
 export function GroupDetailsScreen() {
   const route = useRoute<any>();
   const navigation =
     useNavigation<NavigationProp<{ GroupDetails: GroupDetails }>>();
+  const dispatch = useAppDispatch();
   const { user } = useAppSelector((state) => state.auth);
-  const { id: groupId, name, icon, color, memberCount } = route.params;
+  const groupId = route.params?.id;
+  const groupDetails = useAppSelector((state) =>
+    selectGroupById(state, groupId)
+  );
+  const { loading } = useAppSelector((state) => state.groups);
   const { members, membersLoading, fetchMembers } = useGroupMembers(groupId);
   const { sharedExpenses, expensesLoading, fetchExpenses } =
     useExpenses(groupId);
@@ -60,11 +66,17 @@ export function GroupDetailsScreen() {
   }, [currentGroup]);
 
   useEffect(() => {
+    if (!groupDetails && user?.id) {
+      dispatch(fetchGroups(user.id));
+    }
+  }, [groupId, user?.id]);
+
+  useEffect(() => {
     fetchMembers();
     fetchExpenses();
   }, [groupId]);
 
-  if (membersLoading) {
+  if (loading && !groupDetails) {
     return (
       <View style={styles.loadingContainer}>
         <ActivityIndicator size="large" color="#1a73e8" />
@@ -140,9 +152,9 @@ export function GroupDetailsScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <GroupHeader
-        name={name}
-        icon={icon}
-        color={color}
+        name={groupDetails?.name || ""}
+        icon={groupDetails?.icon || ""}
+        color={groupDetails?.color || ""}
         navigation={navigation}
         onSettingsPress={() => setShowSettingsModal(true)}
       />
@@ -158,7 +170,7 @@ export function GroupDetailsScreen() {
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>
-              Members ({memberCount || 0})
+              Members ({groupDetails?.member_count || 0})
             </Text>
             <TouchableOpacity onPress={() => setShowMembersModal(true)}>
               <Text style={styles.seeAllText}>See All</Text>

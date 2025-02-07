@@ -1,7 +1,7 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import { Session, User } from "@supabase/supabase-js";
-import { supabase } from "../../../lib/supabase";
-import Toaster from "../../../utils/toasterConfig";
+import { supabase } from "../../lib/supabase";
+import Toaster from "../../utils/toasterConfig";
 
 interface AuthState {
   user: User | null;

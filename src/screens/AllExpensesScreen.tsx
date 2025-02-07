@@ -10,7 +10,7 @@ import { useNavigation } from "@react-navigation/native";
 import Icon from "react-native-vector-icons/MaterialIcons";
 import { ExpenseList } from "../components/ExpenseList";
 import { useExpenses } from "../hooks/useExpenses";
-import { useAppSelector } from "../store/user/userStore";
+import { useAppSelector } from "../store/store";
 
 export function AllExpensesScreen() {
   const navigation = useNavigation();

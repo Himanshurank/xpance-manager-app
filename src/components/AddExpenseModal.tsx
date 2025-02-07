@@ -16,7 +16,7 @@ import {
 import Icon from "react-native-vector-icons/MaterialIcons";
 import { supabase } from "../lib/supabase";
 import Toaster from "../utils/toasterConfig";
-import { useAppSelector } from "../store/user/userStore";
+import { useAppSelector } from "../store/store";
 import { Expense } from "../types/types";
 
 const { height } = Dimensions.get("window");

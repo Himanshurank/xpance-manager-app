@@ -15,8 +15,8 @@ import { RootStackParamList } from "../types/types";
 import { uploadProfilePhoto } from "../utils/profileUtils";
 import Toaster from "../utils/toasterConfig";
 import * as ImagePicker from "expo-image-picker";
-import { useAppDispatch, useAppSelector } from "../store/user/userStore";
-import { signOut } from "../store/user/slices/authSlice";
+import { useAppDispatch, useAppSelector } from "../store/store";
+import { signOut } from "../store/slices/authSlice";
 
 type ProfileScreenNavigationProp =
   NativeStackNavigationProp<RootStackParamList>;

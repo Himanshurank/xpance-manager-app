@@ -11,12 +11,17 @@ import {
 } from "react-native";
 import Icon from "react-native-vector-icons/MaterialIcons";
 import { useNavigation } from "@react-navigation/native";
-import { useAppSelector } from "../store/user/userStore";
+import { useAppDispatch, useAppSelector } from "../store/store";
 import { CreateGroupModal } from "../components/CreateGroupModal";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import GroupList from "../components/GroupList";
 import EmptyGroup from "../components/EmptyGroup";
-import { useGroups } from "../hooks/useGroups";
+import {
+  fetchGroups,
+  createGroup,
+  updateGroup,
+  deleteGroup,
+} from "../store/slices/groupSlice";
 
 type RootStackParamList = {
   GroupDetails: {
@@ -31,16 +36,19 @@ type RootStackParamList = {
 export function GroupScreen() {
   const navigation =
     useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const dispatch = useAppDispatch();
   const { user } = useAppSelector((state) => state.auth);
-  const { groups, groupsLoading, fetchGroups } = useGroups(user?.id || "");
+  const { groups, loading } = useAppSelector((state) => state.groups);
 
   const [isModalVisible, setModalVisible] = useState(false);
 
   useEffect(() => {
-    fetchGroups();
+    if (user?.id) {
+      dispatch(fetchGroups(user.id));
+    }
   }, [user]);
 
-  if (groupsLoading) {
+  if (loading) {
     return (
       <View style={styles.loadingContainer}>
         <ActivityIndicator size="large" color="#1a73e8" />
@@ -73,17 +81,17 @@ export function GroupScreen() {
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Recent Groups</Text>
             {groups.length > 0 && (
-              <GroupList groups={groups} loading={groupsLoading} />
+              <GroupList groups={groups} loading={loading} />
             )}
           </View>
           {/* All Groups */}
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>All Groups</Text>
-            {groups.length === 0 && !groupsLoading && (
+            {groups.length === 0 && !loading && (
               <EmptyGroup setModalVisible={setModalVisible} />
             )}
             {groups.length > 0 && (
-              <GroupList groups={groups} loading={groupsLoading} />
+              <GroupList groups={groups} loading={loading} />
             )}
           </View>
         </View>
@@ -92,7 +100,7 @@ export function GroupScreen() {
       <CreateGroupModal
         visible={isModalVisible}
         onClose={() => setModalVisible(false)}
-        onSuccess={fetchGroups}
+        onSuccess={() => dispatch(fetchGroups(user?.id || ""))}
         userId={user?.id || ""}
       />
     </SafeAreaView>

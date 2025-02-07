@@ -13,7 +13,7 @@ import Icon from "react-native-vector-icons/MaterialIcons";
 import { useNavigation } from "@react-navigation/native";
 import { PieChart } from "react-native-chart-kit";
 import { useExpenses } from "../hooks/useExpenses";
-import { useAppSelector } from "../store/user/userStore";
+import { useAppSelector } from "../store/store";
 import { TimeRangeSelector } from "../components/analytics/TimeRangeSelector";
 import { SpendingSummary } from "../components/analytics/SpendingSummary";
 import { CategoryList } from "../components/analytics/CategoryList";

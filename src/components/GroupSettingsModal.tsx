@@ -9,10 +9,10 @@ import {
   Alert,
 } from "react-native";
 import Icon from "react-native-vector-icons/MaterialIcons";
-import { useGroups } from "../hooks/useGroups";
-import { useAppSelector } from "../store/user/userStore";
+import { useAppDispatch, useAppSelector } from "../store/store";
 import { CreateGroupModal } from "./CreateGroupModal";
 import { GroupDetails } from "../types/types";
+import { updateGroup, deleteGroup } from "../store/slices/groupSlice";
 
 interface GroupSettingsModalProps {
   visible: boolean;
@@ -31,36 +31,30 @@ export function GroupSettingsModal({
   navigation,
   onGroupUpdated,
 }: GroupSettingsModalProps) {
+  const dispatch = useAppDispatch();
   const { user } = useAppSelector((state) => state.auth);
-  const { deleteGroup } = useGroups(user?.id || "");
   const [loading, setLoading] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
 
   const handleDeleteGroup = () => {
-    Alert.alert(
-      "Delete Group",
-      `Are you sure you want to delete "${groupDetails.name}"? This action cannot be undone.`,
-      [
-        {
-          text: "Cancel",
-          style: "cancel",
-        },
-        {
-          text: "Delete",
-          style: "destructive",
-          onPress: async () => {
+    Alert.alert("Delete Group", "Are you sure you want to delete this group?", [
+      { text: "Cancel", style: "cancel" },
+      {
+        text: "Delete",
+        style: "destructive",
+        onPress: async () => {
+          try {
             setLoading(true);
-            try {
-              await deleteGroup(groupDetails.id);
-              onClose();
-              navigation.goBack();
-            } finally {
-              setLoading(false);
-            }
-          },
+            await dispatch(deleteGroup(groupDetails.id)).unwrap();
+            navigation.goBack();
+          } catch (error) {
+            console.error("Error deleting group:", error);
+          } finally {
+            setLoading(false);
+          }
         },
-      ]
-    );
+      },
+    ]);
   };
 
   const handleLeaveGroup = () => {

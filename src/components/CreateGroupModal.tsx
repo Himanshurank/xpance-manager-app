@@ -10,7 +10,8 @@ import {
   ActivityIndicator,
 } from "react-native";
 import Icon from "react-native-vector-icons/MaterialIcons";
-import { useGroups } from "../hooks/useGroups";
+import { useAppDispatch } from "../store/store";
+import { createGroup, updateGroup } from "../store/slices/groupSlice";
 import Toaster from "../utils/toasterConfig";
 import { GroupDetails } from "../types/types";
 
@@ -56,11 +57,11 @@ export function CreateGroupModal({
   mode = "create",
   groupData,
 }: CreateGroupModalProps) {
+  const dispatch = useAppDispatch();
   const [name, setName] = useState("");
   const [selectedIcon, setSelectedIcon] = useState<IconType>("people");
   const [selectedColor, setSelectedColor] = useState<ColorType>("#1a73e8");
   const [loading, setLoading] = useState(false);
-  const { createGroup, updateGroup } = useGroups(userId);
 
   useEffect(() => {
     if (mode === "edit" && groupData && visible) {
@@ -107,15 +108,17 @@ export function CreateGroupModal({
 
     try {
       if (mode === "edit" && groupData) {
-        const updates = {
-          name: name.trim(),
-          icon: selectedIcon,
-          color: selectedColor,
-        };
+        const result = await dispatch(
+          updateGroup({
+            groupId: groupData.id,
+            updatedData: {
+              name: name.trim(),
+              icon: selectedIcon,
+              color: selectedColor,
+            },
+          })
+        ).unwrap();
 
-        const result = await updateGroup(groupData.id, updates);
-
-        console.log(groupData, "groupData");
         if (result) {
           onSuccess({
             id: groupData.id,
@@ -127,12 +130,14 @@ export function CreateGroupModal({
           onClose();
         }
       } else {
-        const result = await createGroup({
-          name: name.trim(),
-          icon: selectedIcon,
-          color: selectedColor,
-          created_by: userId,
-        });
+        const result = await dispatch(
+          createGroup({
+            name: name.trim(),
+            icon: selectedIcon,
+            color: selectedColor,
+            created_by: userId,
+          })
+        ).unwrap();
 
         if (result) {
           Toaster({

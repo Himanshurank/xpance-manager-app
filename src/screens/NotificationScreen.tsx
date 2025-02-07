@@ -9,9 +9,9 @@ import {
 } from "react-native";
 import Icon from "react-native-vector-icons/MaterialIcons";
 import { useNavigation } from "@react-navigation/native";
-import { useAppSelector, useAppDispatch } from "../store/user/userStore";
+import { useAppSelector, useAppDispatch } from "../store/store";
 import { supabase } from "../lib/supabase";
-import { updateUserMetadata } from "../store/user/slices/authSlice";
+import { updateUserMetadata } from "../store/slices/authSlice";
 
 const CustomToggle = ({
   value,

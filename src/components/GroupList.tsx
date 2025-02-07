@@ -6,6 +6,7 @@ import {
   Text,
   TouchableOpacity,
   Platform,
+  ActivityIndicator,
 } from "react-native";
 import MaterialIcons from "react-native-vector-icons/MaterialIcons";
 import { Group } from "../types/types";
@@ -26,44 +27,44 @@ type TProps = {
   loading: boolean;
 };
 
-const GroupList = (props: TProps) => {
-  const { groups, loading } = props;
-
+const GroupList = ({ groups, loading }: TProps) => {
   const navigation =
     useNavigation<NativeStackNavigationProp<RootStackParamList>>();
 
+  if (loading && !groups.length) {
+    return <ActivityIndicator size="large" color="#1a73e8" />;
+  }
+
   return (
-    <>
-      {groups.length > 0 &&
-        !loading &&
-        groups.map((group) => (
-          <TouchableOpacity
-            key={group.id}
-            style={styles.groupItem}
-            onPress={() => {
-              navigation.navigate("GroupDetails", {
-                id: group.id,
-                name: group.name,
-                icon: group.icon,
-                color: group.color,
-                memberCount: group.member_count ?? 0,
-              });
-            }}
-          >
-            <View style={styles.groupIcon}>
-              <MaterialIcons name="group" size={24} color="#1a73e8" />
-            </View>
-            <View style={styles.groupInfo}>
-              <Text style={styles.groupName}>{group.name}</Text>
-              <Text style={styles.groupMembers}>
-                {group.member_count}{" "}
-                {group.member_count === 1 ? "member" : "members"}
-              </Text>
-            </View>
-            <MaterialIcons name="chevron-right" size={24} color="#666" />
-          </TouchableOpacity>
-        ))}
-    </>
+    <View>
+      {groups.map((group) => (
+        <TouchableOpacity
+          key={group.id}
+          style={styles.groupItem}
+          onPress={() => {
+            navigation.navigate("GroupDetails", {
+              id: group.id,
+              name: group.name,
+              icon: group.icon,
+              color: group.color,
+              memberCount: group.member_count ?? 0,
+            });
+          }}
+        >
+          <View style={styles.groupIcon}>
+            <MaterialIcons name="group" size={24} color="#1a73e8" />
+          </View>
+          <View style={styles.groupInfo}>
+            <Text style={styles.groupName}>{group.name}</Text>
+            <Text style={styles.groupMembers}>
+              {group.member_count}{" "}
+              {group.member_count === 1 ? "member" : "members"}
+            </Text>
+          </View>
+          <MaterialIcons name="chevron-right" size={24} color="#666" />
+        </TouchableOpacity>
+      ))}
+    </View>
   );
 };
 

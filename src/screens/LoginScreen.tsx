@@ -14,11 +14,8 @@ import { useNavigation } from "@react-navigation/native";
 import Toaster from "../utils/toasterConfig";
 import Icon from "react-native-vector-icons/MaterialIcons";
 import { RootStackParamList } from "../types/types";
-import { useAppDispatch } from "../store/user/userStore";
-import {
-  signInWithEmail,
-  signInWithGoogle,
-} from "../store/user/slices/authSlice";
+import { useAppDispatch } from "../store/store";
+import { signInWithEmail, signInWithGoogle } from "../store/slices/authSlice";
 
 type LoginScreenNavigationProp = NativeStackNavigationProp<
   RootStackParamList,

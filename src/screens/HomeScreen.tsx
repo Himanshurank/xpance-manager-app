@@ -22,8 +22,6 @@ import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { CreateGroupModal } from "../components/CreateGroupModal";
 import EmptyGroup from "../components/EmptyGroup";
 import GroupList from "../components/GroupList";
-import { useGroups } from "../hooks/useGroups";
-import { ExpenseList } from "../components/ExpenseList";
 import { useExpenses } from "../hooks/useExpenses";
 import { useIncome } from "../hooks/useIncome";
 import { AddIncomeModal } from "../components/AddIncomeModal";
@@ -32,8 +30,10 @@ import Toaster from "../utils/toasterConfig";
 import { Expense, RootStackParamList } from "../types/types";
 import { Sidebar } from "../components/common/Sidebar";
 import { User } from "@supabase/supabase-js";
-import { useAppSelector, useAppDispatch } from "../store/user/userStore";
-import { showWelcomeMessage } from "../store/user/slices/authSlice";
+import { useAppDispatch, useAppSelector } from "../store/store";
+import { showWelcomeMessage } from "../store/slices/authSlice";
+import { fetchGroups } from "../store/slices/groupSlice";
+import { ExpenseList } from "../components/ExpenseList";
 
 const { StatusBarManager } = NativeModules;
 const { width } = Dimensions.get("window");
@@ -43,7 +43,9 @@ type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 export function HomeScreen() {
   const dispatch = useAppDispatch();
   const { user, loading: authLoading } = useAppSelector((state) => state.auth);
-  const { groups, groupsLoading, fetchGroups } = useGroups(user?.id || "");
+  const { groups, loading: groupsLoading } = useAppSelector(
+    (state) => state.groups
+  );
   const { allExpenses, expensesLoading, fetchExpenses } = useExpenses(
     undefined,
     user?.id
@@ -88,7 +90,7 @@ export function HomeScreen() {
 
   useEffect(() => {
     if (user?.id) {
-      fetchGroups();
+      dispatch(fetchGroups(user.id));
       fetchExpenses();
       fetchIncome();
     }

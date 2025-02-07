@@ -9,7 +9,7 @@ import {
 } from "react-native";
 import Icon from "react-native-vector-icons/MaterialIcons";
 import { Member } from "../../types/types";
-import { useAppSelector } from "../../store/user/userStore";
+import { useAppSelector } from "../../store/store";
 
 interface ShowAllMemberModalProps {
   showMembersModal: boolean;
