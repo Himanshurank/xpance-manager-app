@@ -181,9 +181,9 @@ export function PersonalInformationScreen() {
               <Icon name="person" size={40} color="#666" />
             </View>
           )}
-          <View style={styles.editPhotoButton}>
+          <TouchableOpacity style={styles.editPhotoButton}>
             <Icon name="camera-alt" size={16} color="#fff" />
-          </View>
+          </TouchableOpacity>
         </TouchableOpacity>
       </View>
 

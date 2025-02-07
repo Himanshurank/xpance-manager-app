@@ -6,6 +6,7 @@ import {
   SafeAreaView,
   ActivityIndicator,
   TouchableOpacity,
+  Image,
 } from "react-native";
 import Icon from "react-native-vector-icons/MaterialIcons";
 import { useNavigation, useRoute } from "@react-navigation/native";
@@ -165,11 +166,12 @@ export function GroupDetailsScreen() {
           </View>
           {members.slice(0, 3).map((member) => (
             <View key={member.id} style={styles.memberPreview}>
-              <View style={styles.memberAvatar}>
-                <Text style={styles.avatarText}>
-                  {member.name[0].toUpperCase()}
-                </Text>
-              </View>
+              <Image
+                source={{
+                  uri: member.avatar_url || "https://via.placeholder.com/40",
+                }}
+                style={styles.memberAvatar}
+              />
               <Text style={styles.memberPreviewName}>{member.name}</Text>
             </View>
           ))}
@@ -308,15 +310,11 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: "#1a73e8",
-    justifyContent: "center",
-    alignItems: "center",
-    marginRight: 12,
   },
-  avatarText: {
-    color: "#fff",
-    fontSize: 16,
-    fontWeight: "600",
+  avatar: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
   },
   memberPreviewName: {
     fontSize: 16,

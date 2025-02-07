@@ -6,6 +6,7 @@ import {
   SafeAreaView,
   TouchableOpacity,
   ScrollView,
+  Image,
 } from "react-native";
 import Icon from "react-native-vector-icons/MaterialIcons";
 import { useNavigation } from "@react-navigation/native";
@@ -100,11 +101,18 @@ export function ProfileScreen() {
             style={styles.avatarContainer}
             onPress={handleProfilePhotoUpload}
           >
-            <View style={styles.avatar}>
-              <Text style={styles.avatarText}>
-                {user?.user_metadata?.name?.[0].toUpperCase()}
-              </Text>
-            </View>
+            {user?.user_metadata?.avatar_url ? (
+              <Image
+                source={{ uri: user.user_metadata.avatar_url }}
+                style={styles.avatar}
+              />
+            ) : (
+              <View style={styles.avatar}>
+                <Text style={styles.avatarText}>
+                  {user?.user_metadata?.name?.[0].toUpperCase()}
+                </Text>
+              </View>
+            )}
             <TouchableOpacity style={styles.changePhotoButton}>
               <Icon name="camera-alt" size={20} color="#fff" />
             </TouchableOpacity>

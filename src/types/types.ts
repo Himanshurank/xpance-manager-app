@@ -17,6 +17,7 @@ export interface Member {
   email: string;
   name: string;
   role: "admin" | "member";
+  avatar_url?: string;
 }
 
 export interface GroupMember {
