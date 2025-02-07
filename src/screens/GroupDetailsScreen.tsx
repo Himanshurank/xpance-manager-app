@@ -12,7 +12,6 @@ import Icon from "react-native-vector-icons/MaterialIcons";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import { supabase } from "../lib/supabase";
 import Toaster from "../utils/toasterConfig";
-import { useGroupMembers } from "../hooks/useGroupMembers";
 import { GroupSettingsModal } from "../components/GroupSettingsModal";
 import { NavigationProp } from "@react-navigation/native";
 import { Expense, GroupDetails } from "../types/types";
@@ -26,6 +25,10 @@ import { GroupHeader } from "../components/group/GroupHeader";
 import { QuickActions } from "../components/group/QuickActions";
 import { useAppSelector, useAppDispatch } from "../store/store";
 import { fetchGroups, selectGroupById } from "../store/slices/groupSlice";
+import {
+  fetchMembers,
+  selectMembersByGroupId,
+} from "../store/slices/memberSlice";
 
 export function GroupDetailsScreen() {
   const route = useRoute<any>();
@@ -38,7 +41,9 @@ export function GroupDetailsScreen() {
     selectGroupById(state, groupId)
   );
   const { loading } = useAppSelector((state) => state.groups);
-  const { members, membersLoading, fetchMembers } = useGroupMembers(groupId);
+  const members = useAppSelector((state) =>
+    selectMembersByGroupId(state, groupId)
+  );
   const { sharedExpenses, expensesLoading, fetchExpenses } =
     useExpenses(groupId);
 
@@ -60,7 +65,7 @@ export function GroupDetailsScreen() {
         name: currentGroup.name,
         icon: currentGroup.icon,
         color: currentGroup.color,
-        memberCount: currentGroup.memberCount,
+        member_count: currentGroup.member_count,
       });
     }
   }, [currentGroup]);
@@ -72,7 +77,12 @@ export function GroupDetailsScreen() {
   }, [groupId, user?.id]);
 
   useEffect(() => {
-    fetchMembers();
+    if (groupId) {
+      dispatch(fetchMembers(groupId));
+    }
+  }, [groupId]);
+
+  useEffect(() => {
     fetchExpenses();
   }, [groupId]);
 
@@ -124,7 +134,7 @@ export function GroupDetailsScreen() {
         text2: "Member added successfully",
       });
       setShowAddMemberModal(false);
-      fetchMembers();
+      dispatch(fetchMembers(groupId));
     } catch (error: any) {
       Toaster({
         type: "error",
@@ -273,7 +283,7 @@ export function GroupDetailsScreen() {
           setExpenseToEdit(undefined);
         }}
         onSuccess={() => {
-          fetchMembers();
+          dispatch(fetchMembers(groupId));
           fetchExpenses();
           setExpenseToEdit(undefined);
         }}

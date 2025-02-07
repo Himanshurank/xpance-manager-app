@@ -33,7 +33,7 @@ export interface GroupDetails {
   name: string;
   icon: string;
   color: string;
-  memberCount: number;
+  member_count: number;
 }
 
 export interface Expense {
