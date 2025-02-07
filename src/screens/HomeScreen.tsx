@@ -22,7 +22,6 @@ import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { CreateGroupModal } from "../components/CreateGroupModal";
 import EmptyGroup from "../components/EmptyGroup";
 import GroupList from "../components/GroupList";
-import { useIncome } from "../hooks/useIncome";
 import { AddIncomeModal } from "../components/AddIncomeModal";
 import { AddExpenseModal } from "../components/AddExpenseModal";
 import Toaster from "../utils/toasterConfig";
@@ -34,6 +33,12 @@ import { showWelcomeMessage } from "../store/slices/authSlice";
 import { fetchGroups } from "../store/slices/groupSlice";
 import { ExpenseList } from "../components/ExpenseList";
 import { fetchExpenses, selectExpenses } from "../store/slices/expenseSlice";
+import {
+  fetchIncome,
+  selectIncome,
+  selectBalance,
+  updateIncome,
+} from "../store/slices/incomeSlice";
 
 const { StatusBarManager } = NativeModules;
 const { width } = Dimensions.get("window");
@@ -48,12 +53,9 @@ export function HomeScreen() {
   );
   const { loading } = useAppSelector((state) => state.expenses);
   const expenses = useAppSelector((state) => selectExpenses(state, user?.id));
-  const {
-    income,
-    balance,
-    loading: incomeLoading,
-    fetchIncome,
-  } = useIncome(user?.id);
+  const { loading: incomeLoading } = useAppSelector((state) => state.income);
+  const income = useAppSelector((state) => selectIncome(state, user?.id));
+  const balance = useAppSelector((state) => selectBalance(state, user?.id));
 
   const [statusBarHeight, setStatusBarHeight] = React.useState(0);
   const [isSidebarOpen, setSidebarOpen] = useState(false);
@@ -90,7 +92,7 @@ export function HomeScreen() {
     if (user?.id) {
       dispatch(fetchGroups(user.id));
       dispatch(fetchExpenses({ userId: user.id }));
-      fetchIncome();
+      dispatch(fetchIncome(user.id));
     }
   }, [user?.id]);
 
@@ -328,7 +330,7 @@ export function HomeScreen() {
       <AddIncomeModal
         visible={showAddIncomeModal}
         onClose={() => setShowAddIncomeModal(false)}
-        onSuccess={fetchIncome}
+        onSuccess={() => dispatch(fetchIncome(user?.id || ""))}
       />
 
       <AddExpenseModal
@@ -340,7 +342,7 @@ export function HomeScreen() {
         }}
         onSuccess={() => {
           dispatch(fetchExpenses({ userId: user?.id }));
-          fetchIncome();
+          dispatch(fetchIncome(user?.id || ""));
           setExpenseToEdit(undefined);
         }}
       />

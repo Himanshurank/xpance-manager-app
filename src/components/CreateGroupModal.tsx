@@ -125,7 +125,7 @@ export function CreateGroupModal({
             name: name.trim(),
             icon: selectedIcon,
             color: selectedColor,
-            memberCount: groupData.memberCount ?? 0,
+            member_count: groupData.member_count ?? 0,
           });
           onClose();
         }
@@ -150,7 +150,7 @@ export function CreateGroupModal({
             name: name.trim(),
             icon: selectedIcon,
             color: selectedColor,
-            memberCount: groupData?.memberCount ?? 0,
+            member_count: groupData?.member_count ?? 0,
           });
           onClose();
         }

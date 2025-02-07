@@ -1,5 +1,7 @@
 import React from "react";
 import { StyleSheet, View, Text } from "react-native";
+import { Expense } from "../../types/types";
+import { ETimeRange } from "../../types/Enums";
 
 interface SpendingSummaryProps {
   totalSpending: number;

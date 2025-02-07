@@ -3,6 +3,7 @@ import authReducer from "./slices/authSlice";
 import groupReducer from "./slices/groupSlice";
 import memberReducer from "./slices/memberSlice";
 import expenseReducer from "./slices/expenseSlice";
+import incomeReducer from "./slices/incomeSlice";
 import { TypedUseSelectorHook, useDispatch, useSelector } from "react-redux";
 
 export const useAppDispatch: () => AppDispatch = useDispatch;
@@ -14,6 +15,7 @@ export const store = configureStore({
     groups: groupReducer,
     members: memberReducer,
     expenses: expenseReducer,
+    income: incomeReducer,
   },
 });
 
