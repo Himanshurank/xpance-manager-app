@@ -16,7 +16,7 @@ import {
 import Icon from "react-native-vector-icons/MaterialIcons";
 import { supabase } from "../lib/supabase";
 import Toaster from "../utils/toasterConfig";
-import { useAuth } from "../hooks/useAuth";
+import { useAppSelector } from "../store/user/userStore";
 import { Expense } from "../types/types";
 
 const { height } = Dimensions.get("window");
@@ -36,7 +36,7 @@ export function AddExpenseModal({
   onSuccess,
   expense,
 }: AddExpenseModalProps) {
-  const { user } = useAuth();
+  const { user } = useAppSelector((state) => state.auth);
   const [amount, setAmount] = useState(expense?.amount.toString() || "");
   const [description, setDescription] = useState(expense?.description || "");
   const [selectedCategory, setSelectedCategory] = useState<string>(

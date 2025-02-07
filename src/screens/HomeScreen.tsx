@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import {
   StyleSheet,
   View,
@@ -13,9 +13,9 @@ import {
   Animated,
   Dimensions,
   Image,
+  ActivityIndicator,
 } from "react-native";
 import { PlatformView } from "../components/PlatformView";
-import { useAuth } from "../hooks/useAuth";
 import Icon from "react-native-vector-icons/MaterialIcons";
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
@@ -32,6 +32,7 @@ import Toaster from "../utils/toasterConfig";
 import { Expense, RootStackParamList } from "../types/types";
 import { Sidebar } from "../components/common/Sidebar";
 import { User } from "@supabase/supabase-js";
+import { useAppSelector } from "../store/user/userStore";
 
 const { StatusBarManager } = NativeModules;
 const { width } = Dimensions.get("window");
@@ -39,7 +40,7 @@ const { width } = Dimensions.get("window");
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
 export function HomeScreen() {
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAppSelector((state) => state.auth);
   const { groups, groupsLoading, fetchGroups } = useGroups(user?.id || "");
   const { allExpenses, expensesLoading, fetchExpenses } = useExpenses(
     undefined,
@@ -84,48 +85,12 @@ export function HomeScreen() {
   };
 
   useEffect(() => {
-    fetchGroups();
-  }, [user]);
-
-  useEffect(() => {
     if (user?.id) {
+      fetchGroups();
       fetchExpenses();
       fetchIncome();
     }
   }, [user?.id]);
-
-  const menuItems = [
-    {
-      icon: "dashboard",
-      label: "Home",
-      description: "Overview & quick actions",
-    },
-    {
-      icon: "group",
-      label: "Groups",
-      description: "Manage shared expenses",
-    },
-    {
-      icon: "receipt-long",
-      label: "Transactions",
-      description: "View all expenses",
-    },
-    {
-      icon: "pie-chart",
-      label: "Analytics",
-      description: "Spending insights",
-    },
-    {
-      icon: "help-outline",
-      label: "Help",
-      description: "Support & guides",
-    },
-    {
-      icon: "settings",
-      label: "Settings",
-      description: "App preferences",
-    },
-  ];
 
   const handleEditExpense = (expense: Expense) => {
     if (expense.paidById !== user?.id) {
@@ -139,6 +104,18 @@ export function HomeScreen() {
     setExpenseToEdit(expense);
     setShowAddExpenseModal(true);
   };
+
+  if (authLoading) {
+    return (
+      <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
+        <ActivityIndicator size="large" color="#1a73e8" />
+      </View>
+    );
+  }
+
+  if (!user) {
+    return null;
+  }
 
   return (
     <SafeAreaView style={styles.container}>

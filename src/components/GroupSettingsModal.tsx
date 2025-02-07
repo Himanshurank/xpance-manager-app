@@ -10,7 +10,7 @@ import {
 } from "react-native";
 import Icon from "react-native-vector-icons/MaterialIcons";
 import { useGroups } from "../hooks/useGroups";
-import { useAuth } from "../hooks/useAuth";
+import { useAppSelector } from "../store/user/userStore";
 import { CreateGroupModal } from "./CreateGroupModal";
 import { GroupDetails } from "../types/types";
 
@@ -31,10 +31,10 @@ export function GroupSettingsModal({
   navigation,
   onGroupUpdated,
 }: GroupSettingsModalProps) {
-  const { deleteGroup } = useGroups(useAuth().user?.id || "");
+  const { user } = useAppSelector((state) => state.auth);
+  const { deleteGroup } = useGroups(user?.id || "");
   const [loading, setLoading] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
-  const { user } = useAuth();
 
   const handleDeleteGroup = () => {
     Alert.alert(

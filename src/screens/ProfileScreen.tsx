@@ -10,12 +10,14 @@ import {
 } from "react-native";
 import Icon from "react-native-vector-icons/MaterialIcons";
 import { useNavigation } from "@react-navigation/native";
-import { useAuth } from "../hooks/useAuth";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { RootStackParamList } from "../types/types";
 import { uploadProfilePhoto } from "../utils/profileUtils";
 import Toaster from "../utils/toasterConfig";
 import * as ImagePicker from "expo-image-picker";
+import { useAppDispatch, useAppSelector } from "../store/user/userStore";
+import { signOut } from "../store/user/slices/authSlice";
+
 type ProfileScreenNavigationProp =
   NativeStackNavigationProp<RootStackParamList>;
 
@@ -49,7 +51,12 @@ const menuItems = [
 
 export function ProfileScreen() {
   const navigation = useNavigation<ProfileScreenNavigationProp>();
-  const { user, signOut } = useAuth();
+  const { user } = useAppSelector((state) => state.auth);
+  const dispatch = useAppDispatch();
+
+  const handleSignOut = () => {
+    dispatch(signOut());
+  };
 
   const handleProfilePhotoUpload = async () => {
     try {
@@ -141,7 +148,7 @@ export function ProfileScreen() {
           ))}
         </View>
 
-        <TouchableOpacity style={styles.logoutButton} onPress={signOut}>
+        <TouchableOpacity style={styles.logoutButton} onPress={handleSignOut}>
           <Icon name="logout" size={24} color="#ea4335" />
           <Text style={styles.logoutText}>Logout</Text>
         </TouchableOpacity>

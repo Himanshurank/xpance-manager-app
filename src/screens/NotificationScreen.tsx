@@ -9,7 +9,7 @@ import {
 } from "react-native";
 import Icon from "react-native-vector-icons/MaterialIcons";
 import { useNavigation } from "@react-navigation/native";
-import { useAuth } from "../hooks/useAuth";
+import { useAppSelector } from "../store/user/userStore";
 import { supabase } from "../lib/supabase";
 
 const CustomToggle = ({
@@ -37,7 +37,7 @@ const CustomToggle = ({
 
 export function NotificationScreen() {
   const navigation = useNavigation();
-  const { user } = useAuth();
+  const { user } = useAppSelector((state) => state.auth);
   const [settings, setSettings] = useState({
     pushEnabled: true,
     emailEnabled: true,

@@ -11,7 +11,7 @@ import {
 } from "react-native";
 import Icon from "react-native-vector-icons/MaterialIcons";
 import { useNavigation } from "@react-navigation/native";
-import { useAuth } from "../hooks/useAuth";
+import { useAppSelector } from "../store/user/userStore";
 import { CreateGroupModal } from "../components/CreateGroupModal";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import GroupList from "../components/GroupList";
@@ -31,7 +31,7 @@ type RootStackParamList = {
 export function GroupScreen() {
   const navigation =
     useNavigation<NativeStackNavigationProp<RootStackParamList>>();
-  const { user } = useAuth();
+  const { user } = useAppSelector((state) => state.auth);
   const { groups, groupsLoading, fetchGroups } = useGroups(user?.id || "");
 
   const [isModalVisible, setModalVisible] = useState(false);

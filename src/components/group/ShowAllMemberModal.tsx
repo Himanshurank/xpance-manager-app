@@ -9,7 +9,8 @@ import {
 } from "react-native";
 import Icon from "react-native-vector-icons/MaterialIcons";
 import { Member } from "../../types/types";
-import { useAuth } from "../../hooks/useAuth";
+import { useAppSelector } from "../../store/user/userStore";
+
 interface ShowAllMemberModalProps {
   showMembersModal: boolean;
   setShowMembersModal: (showMembersModal: boolean) => void;
@@ -18,7 +19,8 @@ interface ShowAllMemberModalProps {
 
 export const ShowAllMemberModal = (props: ShowAllMemberModalProps) => {
   const { showMembersModal, setShowMembersModal, members } = props;
-  const { user } = useAuth();
+  const { user } = useAppSelector((state) => state.auth);
+
   return (
     <Modal
       visible={showMembersModal}

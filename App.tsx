@@ -1,9 +1,8 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { NavigationContainer } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { LoginScreen } from "./src/screens/LoginScreen";
 import { HomeScreen } from "./src/screens/HomeScreen";
-import { useAuth } from "./src/hooks/useAuth";
 import { View, ActivityIndicator } from "react-native";
 import { SignupScreen } from "./src/screens/SignupScreen";
 import Toast from "react-native-toast-message";
@@ -18,11 +17,20 @@ import { RootStackParamList } from "./src/types/types";
 import { SecurityScreen } from "./src/screens/SecurityScreen";
 import { PaymentMethodsScreen } from "./src/screens/PaymentMethodsScreen";
 import { HelpSupportScreen } from "./src/screens/HelpSupportScreen";
+import { store } from "./src/store/user/userStore";
+import { Provider } from "react-redux";
+import { useAppDispatch, useAppSelector } from "./src/store/user/userStore";
+import { initializeAuth } from "./src/store/user/slices/authSlice";
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
-export default function App() {
-  const { user, loading } = useAuth();
+function AppContent() {
+  const dispatch = useAppDispatch();
+  const { user, loading } = useAppSelector((state) => state.auth);
+
+  useEffect(() => {
+    dispatch(initializeAuth());
+  }, [dispatch]);
 
   if (loading) {
     return (
@@ -33,44 +41,44 @@ export default function App() {
   }
 
   return (
-    <>
-      <NavigationContainer>
-        <Stack.Navigator screenOptions={{ headerShown: false }}>
-          {!user ? (
-            <>
-              <Stack.Screen name="Login" component={LoginScreen} />
-              <Stack.Screen name="Signup" component={SignupScreen} />
-            </>
-          ) : (
-            <>
-              <Stack.Screen name="Home" component={HomeScreen} />
-              <Stack.Screen name="Group" component={GroupScreen} />
-              <Stack.Screen
-                name="GroupDetails"
-                component={GroupDetailsScreen}
-              />
-              <Stack.Screen name="Transaction" component={AllExpensesScreen} />
-              <Stack.Screen name="Profile" component={ProfileScreen} />
-              <Stack.Screen name="Analytics" component={AnalyticsScreen} />
-              <Stack.Screen
-                name="PersonalInformation"
-                component={PersonalInformationScreen}
-              />
-              <Stack.Screen
-                name="Notification"
-                component={NotificationScreen}
-              />
-              <Stack.Screen name="Security" component={SecurityScreen} />
-              <Stack.Screen
-                name="PaymentMethods"
-                component={PaymentMethodsScreen}
-              />
-              <Stack.Screen name="HelpSupport" component={HelpSupportScreen} />
-            </>
-          )}
-        </Stack.Navigator>
-      </NavigationContainer>
+    <NavigationContainer>
+      <Stack.Navigator screenOptions={{ headerShown: false }}>
+        {!user ? (
+          <>
+            <Stack.Screen name="Login" component={LoginScreen} />
+            <Stack.Screen name="Signup" component={SignupScreen} />
+          </>
+        ) : (
+          <>
+            <Stack.Screen name="Home" component={HomeScreen} />
+            <Stack.Screen name="Group" component={GroupScreen} />
+            <Stack.Screen name="GroupDetails" component={GroupDetailsScreen} />
+            <Stack.Screen name="Transaction" component={AllExpensesScreen} />
+            <Stack.Screen name="Profile" component={ProfileScreen} />
+            <Stack.Screen name="Analytics" component={AnalyticsScreen} />
+            <Stack.Screen
+              name="PersonalInformation"
+              component={PersonalInformationScreen}
+            />
+            <Stack.Screen name="Notification" component={NotificationScreen} />
+            <Stack.Screen name="Security" component={SecurityScreen} />
+            <Stack.Screen
+              name="PaymentMethods"
+              component={PaymentMethodsScreen}
+            />
+            <Stack.Screen name="HelpSupport" component={HelpSupportScreen} />
+          </>
+        )}
+      </Stack.Navigator>
+    </NavigationContainer>
+  );
+}
+
+export default function App() {
+  return (
+    <Provider store={store}>
+      <AppContent />
       <Toast />
-    </>
+    </Provider>
   );
 }

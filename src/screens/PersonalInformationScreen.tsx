@@ -16,7 +16,7 @@ import {
 } from "react-native";
 import Icon from "react-native-vector-icons/MaterialIcons";
 import { useNavigation } from "@react-navigation/native";
-import { useAuth } from "../hooks/useAuth";
+import { useAppSelector } from "../store/user/userStore";
 import { supabase } from "../lib/supabase";
 import Toaster from "../utils/toasterConfig";
 import { uploadProfilePhoto, deleteProfilePhoto } from "../utils/profileUtils";
@@ -26,7 +26,7 @@ const { height } = Dimensions.get("window");
 
 export function PersonalInformationScreen() {
   const navigation = useNavigation();
-  const { user } = useAuth();
+  const { user } = useAppSelector((state) => state.auth);
   const [formData, setFormData] = useState({
     name: user?.user_metadata?.name || "",
     email: user?.email || "",
@@ -95,6 +95,10 @@ export function PersonalInformationScreen() {
       });
 
       if (error) throw error;
+
+      // You might want to dispatch an action to update the Redux store here
+      // dispatch(updateUserMetadata(formData));
+
       Toaster({
         type: "success",
         text1: "Success",

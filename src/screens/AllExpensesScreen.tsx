@@ -10,11 +10,11 @@ import { useNavigation } from "@react-navigation/native";
 import Icon from "react-native-vector-icons/MaterialIcons";
 import { ExpenseList } from "../components/ExpenseList";
 import { useExpenses } from "../hooks/useExpenses";
-import { useAuth } from "../hooks/useAuth";
+import { useAppSelector } from "../store/user/userStore";
 
 export function AllExpensesScreen() {
   const navigation = useNavigation();
-  const { user } = useAuth();
+  const { user } = useAppSelector((state) => state.auth);
   const { allExpenses, expensesLoading, fetchExpenses } = useExpenses(
     undefined,
     user?.id

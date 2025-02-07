@@ -10,7 +10,6 @@ import {
 } from "react-native";
 import Icon from "react-native-vector-icons/MaterialIcons";
 import { useNavigation, useRoute } from "@react-navigation/native";
-import { useAuth } from "../hooks/useAuth";
 import { supabase } from "../lib/supabase";
 import Toaster from "../utils/toasterConfig";
 import { useGroupMembers } from "../hooks/useGroupMembers";
@@ -25,12 +24,13 @@ import { AddMemberModal } from "../components/group/AddMemberModal";
 import { ShowAllMemberModal } from "../components/group/ShowAllMemberModal";
 import { GroupHeader } from "../components/group/GroupHeader";
 import { QuickActions } from "../components/group/QuickActions";
+import { useAppSelector } from "../store/user/userStore";
 
 export function GroupDetailsScreen() {
   const route = useRoute<any>();
   const navigation =
     useNavigation<NavigationProp<{ GroupDetails: GroupDetails }>>();
-  const { user } = useAuth();
+  const { user } = useAppSelector((state) => state.auth);
   const { id: groupId, name, icon, color, memberCount } = route.params;
   const { members, membersLoading, fetchMembers } = useGroupMembers(groupId);
   const { sharedExpenses, expensesLoading, fetchExpenses } =

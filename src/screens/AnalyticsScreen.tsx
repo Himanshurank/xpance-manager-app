@@ -13,7 +13,7 @@ import Icon from "react-native-vector-icons/MaterialIcons";
 import { useNavigation } from "@react-navigation/native";
 import { PieChart } from "react-native-chart-kit";
 import { useExpenses } from "../hooks/useExpenses";
-import { useAuth } from "../hooks/useAuth";
+import { useAppSelector } from "../store/user/userStore";
 import { TimeRangeSelector } from "../components/analytics/TimeRangeSelector";
 import { SpendingSummary } from "../components/analytics/SpendingSummary";
 import { CategoryList } from "../components/analytics/CategoryList";
@@ -30,7 +30,7 @@ const { width } = Dimensions.get("window");
 
 export function AnalyticsScreen() {
   const navigation = useNavigation();
-  const { user } = useAuth();
+  const { user } = useAppSelector((state) => state.auth);
   const { allExpenses, fetchExpenses } = useExpenses(undefined, user?.id);
   const [selectedRange, setSelectedRange] = useState<ETimeRange>(
     ETimeRange.Today

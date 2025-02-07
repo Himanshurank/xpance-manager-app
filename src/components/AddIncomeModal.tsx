@@ -11,7 +11,7 @@ import {
 import Icon from "react-native-vector-icons/MaterialIcons";
 import { supabase } from "../lib/supabase";
 import Toaster from "../utils/toasterConfig";
-import { useAuth } from "../hooks/useAuth";
+import { useAppSelector } from "../store/user/userStore";
 
 interface AddIncomeModalProps {
   visible: boolean;
@@ -26,7 +26,7 @@ export function AddIncomeModal({
 }: AddIncomeModalProps) {
   const [amount, setAmount] = useState("");
   const [loading, setLoading] = useState(false);
-  const { user } = useAuth();
+  const { user } = useAppSelector((state) => state.auth);
 
   const handleSubmit = async () => {
     if (!amount || !user?.id) return;

@@ -11,10 +11,14 @@ import {
 import GoogleIcon from "../../assets/google-icon.svg";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useNavigation } from "@react-navigation/native";
-import { useAuth } from "../hooks/useAuth";
 import Toaster from "../utils/toasterConfig";
 import Icon from "react-native-vector-icons/MaterialIcons";
 import { RootStackParamList } from "../types/types";
+import { useAppDispatch } from "../store/user/userStore";
+import {
+  signInWithEmail,
+  signInWithGoogle,
+} from "../store/user/slices/authSlice";
 
 type LoginScreenNavigationProp = NativeStackNavigationProp<
   RootStackParamList,
@@ -23,7 +27,7 @@ type LoginScreenNavigationProp = NativeStackNavigationProp<
 
 export function LoginScreen() {
   const navigation = useNavigation<LoginScreenNavigationProp>();
-  const { signInWithEmail, signInWithGoogle } = useAuth();
+  const dispatch = useAppDispatch();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -56,22 +60,13 @@ export function LoginScreen() {
         visibilityTime: 2000,
       });
 
-      const { error } = await signInWithEmail(email, password);
-
-      if (error) {
-        Toaster({
-          type: "error",
-          text1: "Error",
-          text2: error.message,
-        });
-      }
+      await dispatch(signInWithEmail({ email, password })).unwrap();
     } catch (error: any) {
       Toaster({
         type: "error",
         text1: "Error",
-        text2: "An unexpected error occurred",
+        text2: error.message || "An unexpected error occurred",
       });
-      console.error("Login error:", error);
     }
   };
 
@@ -84,22 +79,13 @@ export function LoginScreen() {
         autoHide: false,
       });
 
-      const { error } = await signInWithGoogle();
-
-      if (error) {
-        Toaster({
-          type: "error",
-          text1: "Error",
-          text2: error.message,
-        });
-      }
+      await dispatch(signInWithGoogle()).unwrap();
     } catch (error: any) {
       Toaster({
         type: "error",
         text1: "Error",
-        text2: "Failed to connect with Google",
+        text2: error.message || "Failed to connect with Google",
       });
-      console.error("Google login error:", error);
     }
   };
 
