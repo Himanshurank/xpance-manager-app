@@ -22,7 +22,6 @@ import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { CreateGroupModal } from "../components/CreateGroupModal";
 import EmptyGroup from "../components/EmptyGroup";
 import GroupList from "../components/GroupList";
-import { useExpenses } from "../hooks/useExpenses";
 import { useIncome } from "../hooks/useIncome";
 import { AddIncomeModal } from "../components/AddIncomeModal";
 import { AddExpenseModal } from "../components/AddExpenseModal";
@@ -34,6 +33,7 @@ import { useAppDispatch, useAppSelector } from "../store/store";
 import { showWelcomeMessage } from "../store/slices/authSlice";
 import { fetchGroups } from "../store/slices/groupSlice";
 import { ExpenseList } from "../components/ExpenseList";
+import { fetchExpenses, selectExpenses } from "../store/slices/expenseSlice";
 
 const { StatusBarManager } = NativeModules;
 const { width } = Dimensions.get("window");
@@ -46,10 +46,8 @@ export function HomeScreen() {
   const { groups, loading: groupsLoading } = useAppSelector(
     (state) => state.groups
   );
-  const { allExpenses, expensesLoading, fetchExpenses } = useExpenses(
-    undefined,
-    user?.id
-  );
+  const { loading } = useAppSelector((state) => state.expenses);
+  const expenses = useAppSelector((state) => selectExpenses(state, user?.id));
   const {
     income,
     balance,
@@ -91,7 +89,7 @@ export function HomeScreen() {
   useEffect(() => {
     if (user?.id) {
       dispatch(fetchGroups(user.id));
-      fetchExpenses();
+      dispatch(fetchExpenses({ userId: user.id }));
       fetchIncome();
     }
   }, [user?.id]);
@@ -288,8 +286,8 @@ export function HomeScreen() {
             </TouchableOpacity>
           </View>
           <ExpenseList
-            expenses={allExpenses}
-            isLoading={expensesLoading}
+            expenses={expenses}
+            isLoading={loading}
             onEditExpense={handleEditExpense}
           />
         </PlatformView>
@@ -341,7 +339,7 @@ export function HomeScreen() {
           setExpenseToEdit(undefined);
         }}
         onSuccess={() => {
-          fetchExpenses();
+          dispatch(fetchExpenses({ userId: user?.id }));
           fetchIncome();
           setExpenseToEdit(undefined);
         }}

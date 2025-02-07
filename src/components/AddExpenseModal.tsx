@@ -16,8 +16,9 @@ import {
 import Icon from "react-native-vector-icons/MaterialIcons";
 import { supabase } from "../lib/supabase";
 import Toaster from "../utils/toasterConfig";
-import { useAppSelector } from "../store/store";
+import { useAppSelector, useAppDispatch } from "../store/store";
 import { Expense } from "../types/types";
+import { updateExpenseAndRefresh } from "../store/slices/expenseSlice";
 
 const { height } = Dimensions.get("window");
 
@@ -48,6 +49,7 @@ export function AddExpenseModal({
   const [loading, setLoading] = useState(false);
   const [categories, setCategories] = useState<any[]>([]);
   const slideAnim = useRef(new Animated.Value(height)).current;
+  const dispatch = useAppDispatch();
 
   useEffect(() => {
     fetchCategories();
@@ -107,42 +109,21 @@ export function AddExpenseModal({
 
     setLoading(true);
     try {
-      const expenseData = {
-        description,
-        amount: parseFloat(amount),
-        category_id: selectedCategory,
-        paid_by: user?.id,
-        group_id: groupId,
-      };
-
-      if (expense) {
-        // Update existing expense
-        const { error } = await supabase
-          .from(groupId ? "shared_expenses" : "personal_expenses")
-          .update(expenseData)
-          .eq("id", expense.id);
-
-        if (error) throw error;
-        Toaster({ type: "success", text1: "Expense updated successfully" });
-      } else {
-        // Create new expense
-        const { error } = await supabase
-          .from(groupId ? "shared_expenses" : "personal_expenses")
-          .insert([expenseData]);
-
-        if (error) throw error;
-        Toaster({ type: "success", text1: "Expense added successfully" });
-      }
+      await dispatch(
+        updateExpenseAndRefresh({
+          id: expense?.id || "",
+          description,
+          amount: parseFloat(amount),
+          category_id: selectedCategory,
+          group_id: groupId,
+          paid_by: user?.id,
+        })
+      ).unwrap();
 
       onSuccess?.();
       onClose();
     } catch (error) {
-      console.error("Error saving expense:", error);
-      Toaster({
-        type: "error",
-        text1: "Error",
-        text2: "Failed to save expense",
-      });
+      console.error("Error updating expense:", error);
     } finally {
       setLoading(false);
     }
@@ -160,7 +141,9 @@ export function AddExpenseModal({
         activeOpacity={1}
         onPress={onClose}
       >
-        <Animated.View
+        <TouchableOpacity
+          activeOpacity={1}
+          onPress={(e) => e.stopPropagation()}
           style={[
             styles.modalContent,
             {
@@ -260,7 +243,7 @@ export function AddExpenseModal({
               )}
             </TouchableOpacity>
           </ScrollView>
-        </Animated.View>
+        </TouchableOpacity>
       </TouchableOpacity>
     </Modal>
   );

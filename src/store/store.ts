@@ -2,6 +2,7 @@ import { configureStore } from "@reduxjs/toolkit";
 import authReducer from "./slices/authSlice";
 import groupReducer from "./slices/groupSlice";
 import memberReducer from "./slices/memberSlice";
+import expenseReducer from "./slices/expenseSlice";
 import { TypedUseSelectorHook, useDispatch, useSelector } from "react-redux";
 
 export const useAppDispatch: () => AppDispatch = useDispatch;
@@ -12,6 +13,7 @@ export const store = configureStore({
     auth: authReducer,
     groups: groupReducer,
     members: memberReducer,
+    expenses: expenseReducer,
   },
 });
 

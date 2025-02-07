@@ -17,7 +17,6 @@ import { NavigationProp } from "@react-navigation/native";
 import { Expense, GroupDetails } from "../types/types";
 import { AddExpenseModal } from "../components/AddExpenseModal";
 import { ExpenseList } from "../components/ExpenseList";
-import { useExpenses } from "../hooks/useExpenses";
 import { SettleUpModal } from "../components/SettleUpModal";
 import { AddMemberModal } from "../components/group/AddMemberModal";
 import { ShowAllMemberModal } from "../components/group/ShowAllMemberModal";
@@ -29,6 +28,11 @@ import {
   fetchMembers,
   selectMembersByGroupId,
 } from "../store/slices/memberSlice";
+import {
+  fetchExpenses,
+  selectExpenses,
+  selectSharedExpenses,
+} from "../store/slices/expenseSlice";
 
 export function GroupDetailsScreen() {
   const route = useRoute<any>();
@@ -44,8 +48,13 @@ export function GroupDetailsScreen() {
   const members = useAppSelector((state) =>
     selectMembersByGroupId(state, groupId)
   );
-  const { sharedExpenses, expensesLoading, fetchExpenses } =
-    useExpenses(groupId);
+  const { loading: expensesLoading } = useAppSelector(
+    (state) => state.expenses
+  );
+
+  const sharedExpenses = useAppSelector((state) =>
+    selectSharedExpenses(state, groupId)
+  );
 
   const [showMembersModal, setShowMembersModal] = useState(false);
   const [showAddMemberModal, setShowAddMemberModal] = useState(false);
@@ -83,7 +92,9 @@ export function GroupDetailsScreen() {
   }, [groupId]);
 
   useEffect(() => {
-    fetchExpenses();
+    if (groupId) {
+      dispatch(fetchExpenses({ groupId }));
+    }
   }, [groupId]);
 
   if (loading && !groupDetails) {
@@ -284,7 +295,7 @@ export function GroupDetailsScreen() {
         }}
         onSuccess={() => {
           dispatch(fetchMembers(groupId));
-          fetchExpenses();
+          dispatch(fetchExpenses({ groupId }));
           setExpenseToEdit(undefined);
         }}
       />

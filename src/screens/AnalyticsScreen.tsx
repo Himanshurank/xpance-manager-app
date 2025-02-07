@@ -12,8 +12,8 @@ import {
 import Icon from "react-native-vector-icons/MaterialIcons";
 import { useNavigation } from "@react-navigation/native";
 import { PieChart } from "react-native-chart-kit";
-import { useExpenses } from "../hooks/useExpenses";
-import { useAppSelector } from "../store/store";
+import { useAppSelector, useAppDispatch } from "../store/store";
+import { fetchExpenses, selectExpenses } from "../store/slices/expenseSlice";
 import { TimeRangeSelector } from "../components/analytics/TimeRangeSelector";
 import { SpendingSummary } from "../components/analytics/SpendingSummary";
 import { CategoryList } from "../components/analytics/CategoryList";
@@ -30,8 +30,10 @@ const { width } = Dimensions.get("window");
 
 export function AnalyticsScreen() {
   const navigation = useNavigation();
+  const dispatch = useAppDispatch();
   const { user } = useAppSelector((state) => state.auth);
-  const { allExpenses, fetchExpenses } = useExpenses(undefined, user?.id);
+  const { loading } = useAppSelector((state) => state.expenses);
+  const expenses = useAppSelector((state) => selectExpenses(state, user?.id));
   const [selectedRange, setSelectedRange] = useState<ETimeRange>(
     ETimeRange.Today
   );
@@ -39,14 +41,14 @@ export function AnalyticsScreen() {
 
   useEffect(() => {
     if (user?.id) {
-      fetchExpenses();
+      dispatch(fetchExpenses({ userId: user.id }));
     }
   }, [user?.id]);
 
   useEffect(() => {
-    const filtered = getFilteredExpenses(allExpenses, selectedRange);
+    const filtered = getFilteredExpenses(expenses, selectedRange);
     setFilteredData(filtered);
-  }, [allExpenses, selectedRange]);
+  }, [expenses, selectedRange]);
 
   const categoryData = getCategoryData(filteredData);
   const totalSpending = filteredData.reduce(
@@ -78,6 +80,9 @@ export function AnalyticsScreen() {
         <SpendingSummary
           totalSpending={totalSpending}
           averageSpending={averageSpending}
+          expenses={expenses}
+          timeRange={selectedRange}
+          loading={loading}
         />
 
         <View style={styles.chartSection}>

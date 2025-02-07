@@ -4,11 +4,17 @@ import { StyleSheet, View, Text } from "react-native";
 interface SpendingSummaryProps {
   totalSpending: number;
   averageSpending: number;
+  expenses: Expense[];
+  timeRange: ETimeRange;
+  loading: boolean;
 }
 
 export function SpendingSummary({
   totalSpending,
   averageSpending,
+  expenses,
+  timeRange,
+  loading,
 }: SpendingSummaryProps) {
   return (
     <View style={styles.container}>

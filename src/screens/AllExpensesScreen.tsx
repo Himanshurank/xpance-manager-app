@@ -9,20 +9,19 @@ import {
 import { useNavigation } from "@react-navigation/native";
 import Icon from "react-native-vector-icons/MaterialIcons";
 import { ExpenseList } from "../components/ExpenseList";
-import { useExpenses } from "../hooks/useExpenses";
-import { useAppSelector } from "../store/store";
+import { useAppSelector, useAppDispatch } from "../store/store";
+import { fetchExpenses, selectExpenses } from "../store/slices/expenseSlice";
 
 export function AllExpensesScreen() {
   const navigation = useNavigation();
+  const dispatch = useAppDispatch();
   const { user } = useAppSelector((state) => state.auth);
-  const { allExpenses, expensesLoading, fetchExpenses } = useExpenses(
-    undefined,
-    user?.id
-  );
+  const { loading } = useAppSelector((state) => state.expenses);
+  const expenses = useAppSelector((state) => selectExpenses(state, user?.id));
 
   useEffect(() => {
     if (user?.id) {
-      fetchExpenses();
+      dispatch(fetchExpenses({ userId: user.id }));
     }
   }, [user?.id]);
 
@@ -40,8 +39,8 @@ export function AllExpensesScreen() {
       </View>
 
       <ExpenseList
-        expenses={allExpenses}
-        isLoading={expensesLoading}
+        expenses={expenses}
+        isLoading={loading}
         onEditExpense={(expense) => {
           // Handle edit expense
         }}
