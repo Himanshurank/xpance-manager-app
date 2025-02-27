@@ -1,0 +1,19 @@
+workflows:
+  ios-workflow:
+    name: iOS Production
+    environment:
+      ios_signing:
+        distribution_type: app_store
+        bundle_identifier: com.your.bundleid
+    scripts:
+      - name: Install dependencies
+        script: yarn install
+      - name: iOS build
+        script: |
+          cd ios
+          pod install
+          xcode-project build-ipa \
+            --workspace "xpance-manager-app.xcworkspace" \
+            --scheme "xpance-manager-app"
+    artifacts:
+      - build/ios/ipa/*.ipa
