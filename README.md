@@ -80,13 +80,64 @@ src/
 
 The app uses Supabase with the following main tables:
 
-- users
-- groups
-- group_members
-- expense_categories
-- personal_expenses
-- shared_expenses
-- expense_participants
+```mermaid
+erDiagram
+    users ||--o{ personal_expenses : "has"
+    users ||--o{ group_members : "belongs to"
+    users ||--o{ shared_expenses : "creates"
+    groups ||--o{ group_members : "contains"
+    groups ||--o{ shared_expenses : "has"
+    shared_expenses ||--o{ expense_participants : "split between"
+    users ||--o{ expense_participants : "participates in"
+
+    users {
+        uuid id PK
+        string name
+        string email
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    groups {
+        uuid id PK
+        string name
+        string description
+        uuid created_by FK
+        timestamp created_at
+    }
+
+    group_members {
+        uuid id PK
+        uuid group_id FK
+        uuid user_id FK
+        string role
+        timestamp joined_at
+    }
+
+    shared_expenses {
+        uuid id PK
+        uuid group_id FK
+        uuid paid_by FK
+        float amount
+        string description
+        timestamp created_at
+    }
+
+    expense_participants {
+        uuid id PK
+        uuid expense_id FK
+        uuid user_id FK
+        float share_amount
+    }
+
+    personal_expenses {
+        uuid id PK
+        uuid user_id FK
+        float amount
+        string category
+        timestamp created_at
+    }
+```
 
 ## Features in Detail
 
